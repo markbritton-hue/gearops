@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Capture — Streamwave</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; }
+
+    .top-nav { background: rgba(15,23,42,0.95); border-bottom: 1px solid rgba(96,165,250,0.2); padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
+    .top-nav h1 { font-size: 1.25rem; font-weight: 700; color: #60a5fa; margin: 0; }
+    .nav-back { background: rgba(96,165,250,0.15); border: 1px solid rgba(96,165,250,0.3); color: #60a5fa; border-radius: 8px; padding: 6px 14px; font-size: 0.8rem; font-weight: 600; cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 6px; }
+    .nav-back:hover { background: rgba(96,165,250,0.25); color: #60a5fa; }
+
+    .page { padding: 16px 20px; margin: 0; }
+
+    /* Split layout */
+    .split-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      height: calc(100vh - 130px);
+    }
+    .split-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+    }
+    .panel-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* YouTube panel */
+    .yt-wrap {
+      flex: 1;
+      background: #000;
+      border: 2px solid rgba(239,68,68,0.2);
+      border-radius: 14px;
+      overflow: hidden;
+      position: relative;
+    }
+    .yt-wrap iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .yt-blocked {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(15,23,42,0.97);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      text-align: center;
+      padding: 20px;
+    }
+    .yt-blocked i { font-size: 2rem; color: #ef4444; }
+    .yt-blocked p { color: #94a3b8; font-size: 0.85rem; margin: 0; }
+    .yt-blocked a { color: #ef4444; font-weight: 600; text-decoration: none; }
+
+    @media (max-width: 900px) {
+      .split-layout { grid-template-columns: 1fr; height: auto; }
+      .split-panel { height: 50vw; min-height: 280px; }
+    }
+
+    /* Controls */
+    .controls-card { background: rgba(30,41,59,0.8); border: 1px solid rgba(96,165,250,0.15); border-radius: 14px; padding: 20px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; margin-bottom: 20px; }
+    .ctrl-group { display: flex; flex-direction: column; gap: 5px; min-width: 220px; flex: 1; }
+    .ctrl-group label { font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+    .ctrl-group select {
+      background: rgba(15,23,42,0.7);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      color: #e2e8f0;
+      padding: 9px 12px;
+      font-size: 0.88rem;
+      outline: none;
+      cursor: pointer;
+    }
+    .ctrl-group select:focus { border-color: rgba(96,165,250,0.5); }
+    .ctrl-group select option { background: #1e293b; }
+
+    .btn-scan { background: rgba(96,165,250,0.15); border: 1px solid rgba(96,165,250,0.3); color: #60a5fa; border-radius: 8px; padding: 9px 18px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .btn-scan:hover { background: rgba(96,165,250,0.25); }
+    .btn-scan:disabled { opacity: 0.5; cursor: wait; }
+
+    .btn-start { background: #22c55e; border: none; color: #0f172a; border-radius: 8px; padding: 9px 24px; font-size: 0.88rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 7px; }
+    .btn-start:hover { background: #4ade80; }
+    .btn-start:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-stop { background: #ef4444; border: none; color: #fff; border-radius: 8px; padding: 9px 24px; font-size: 0.88rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 7px; display: none; }
+    .btn-stop:hover { background: #f87171; }
+
+    /* Preview */
+    .preview-wrap {
+      background: #000;
+      border: 2px solid rgba(96,165,250,0.15);
+      border-radius: 14px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+    .preview-wrap.live { border-color: rgba(34,197,94,0.5); box-shadow: 0 0 20px rgba(34,197,94,0.1); }
+
+    #preview-img { width: 100%; height: 100%; object-fit: contain; display: none; }
+
+    .preview-placeholder { text-align: center; color: #334155; }
+    .preview-placeholder i { font-size: 4rem; margin-bottom: 12px; }
+    .preview-placeholder p { font-size: 0.9rem; }
+
+    .live-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: #ef4444;
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      display: none;
+      align-items: center;
+      gap: 5px;
+      letter-spacing: 0.5px;
+    }
+    .live-badge .dot { width: 7px; height: 7px; background: #fff; border-radius: 50%; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .status-bar { margin-top: 12px; font-size: 0.8rem; color: #475569; min-height: 20px; }
+    .status-bar.err { color: #f87171; }
+    .status-bar.ok  { color: #4ade80; }
+
+    /* FFmpeg note */
+    .ffmpeg-note { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.2); border-radius: 10px; padding: 14px 18px; font-size: 0.82rem; color: #fbbf24; line-height: 1.7; margin-bottom: 20px; display: none; }
+    .ffmpeg-note a { color: #fbbf24; }
+
+    @media (max-width: 600px) {
+      .controls-card { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <i class="fa-solid fa-tower-broadcast" style="color:#60a5fa;font-size:1.2rem;"></i>
+  <h1>Capture Preview</h1>
+  <a class="nav-back" href="http://localhost:8080"><i class="fa-solid fa-arrow-left"></i> Equipment</a>
+</nav>
+
+<div class="page">
+
+  <div class="ffmpeg-note" id="ffmpeg-note">
+    <strong><i class="fa-solid fa-triangle-exclamation"></i> FFmpeg not found.</strong>
+    Download from <a href="https://www.gyan.dev/ffmpeg/builds/" target="_blank">gyan.dev/ffmpeg/builds</a>,
+    extract and place at <code>C:\ffmpeg\bin\ffmpeg.exe</code>, then restart start.bat.
+  </div>
+
+  <!-- Controls bar -->
+  <div class="controls-card">
+    <div class="ctrl-group">
+      <label>Capture Device</label>
+      <select id="device-select">
+        <option value="">— Scan for devices —</option>
+      </select>
+    </div>
+    <button class="btn-scan" id="btn-scan" onclick="scanDevices()">
+      <i class="fa-solid fa-rotate"></i> Scan
+    </button>
+    <button class="btn-start" id="btn-start" onclick="startStream()" disabled>
+      <i class="fa-solid fa-circle-play"></i> Start Preview
+    </button>
+    <button class="btn-stop" id="btn-stop" onclick="stopStream()">
+      <i class="fa-solid fa-circle-stop"></i> Stop
+    </button>
+    <div class="status-bar" id="status-bar" style="margin:0;flex:1;text-align:right;"></div>
+  </div>
+
+  <!-- Split layout -->
+  <div class="split-layout">
+
+    <!-- Left: Capture / Multiview -->
+    <div class="split-panel">
+      <div class="panel-label"><i class="fa-solid fa-camera" style="color:#22c55e;"></i> Multiview / Capture</div>
+      <div class="preview-wrap" id="preview-wrap" style="flex:1;">
+        <div class="preview-placeholder" id="placeholder">
+          <i class="fa-solid fa-camera-slash"></i>
+          <p>Select a capture device and press Start Preview</p>
+        </div>
+        <canvas id="preview-canvas" style="width:100%;height:100%;display:none;"></canvas>
+        <div class="live-badge" id="live-badge">
+          <span class="dot"></span> LIVE
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Embedded browser -->
+    <div class="split-panel">
+      <div class="panel-label"><i class="fa-solid fa-globe" style="color:#60a5fa;"></i> Browser</div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input id="browser-url" type="text" value="https://www.youtube.com/embed/8EMnwAVznvE?autoplay=1&mute=1&rel=0&modestbranding=1"
+          style="flex:1;background:rgba(15,23,42,0.7);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#e2e8f0;padding:7px 12px;font-size:0.85rem;outline:none;"
+          onkeydown="if(event.key==='Enter') navigate()" />
+        <button onclick="navigate()" style="background:rgba(96,165,250,0.2);border:1px solid rgba(96,165,250,0.3);color:#60a5fa;border-radius:8px;padding:7px 14px;font-size:0.85rem;font-weight:600;cursor:pointer;white-space:nowrap;">
+          <i class="fa-solid fa-arrow-right"></i> Go
+        </button>
+      </div>
+      <div class="yt-wrap" style="flex:1;">
+        <iframe id="browser-frame"
+          src="https://www.youtube.com/embed/8EMnwAVznvE?autoplay=1&mute=1&rel=0&modestbranding=1"
+          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+          referrerpolicy="no-referrer"
+          allowfullscreen>
+        </iframe>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  let streaming = false;
+
+  const LOCAL_IP_RE = /^192\.168\.|^10\.|^172\.(1[6-9]|2\d|3[01])\./;
+
+  function resolveFrameSrc(rawUrl) {
+    // Route local IPs through proxy so X-Frame-Options headers are stripped
+    if (LOCAL_IP_RE.test(rawUrl.replace(/^https?:\/\//i, ''))) {
+      return 'http://localhost:8080/proxy?url=' + encodeURIComponent(rawUrl);
+    }
+    return rawUrl;
+  }
+
+  // Restore saved browser URL
+  const savedBrowserUrl = localStorage.getItem('swp-browser-url');
+  if (savedBrowserUrl) {
+    document.getElementById('browser-url').value = savedBrowserUrl;
+    document.getElementById('browser-frame').src = resolveFrameSrc(savedBrowserUrl);
+  }
+
+  function navigate() {
+    let url = document.getElementById('browser-url').value.trim();
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url)) {
+      url = (LOCAL_IP_RE.test(url) ? 'http://' : 'https://') + url;
+    }
+    document.getElementById('browser-url').value = url;
+    document.getElementById('browser-frame').src = resolveFrameSrc(url);
+    localStorage.setItem('swp-browser-url', url);
+  }
+
+  async function scanDevices() { // returns promise
+    const btn = document.getElementById('btn-scan');
+    const sel = document.getElementById('device-select');
+    btn.disabled = true;
+    setStatus('Scanning for capture devices...');
+
+    try {
+      const r = await fetch('http://localhost:8080/ffmpeg/devices');
+      const data = await r.json();
+
+      if (data.error) {
+        if (data.error.includes('not found')) {
+          document.getElementById('ffmpeg-note').style.display = 'block';
+          setStatus('FFmpeg not installed.', 'err');
+        } else {
+          setStatus(data.error, 'err');
+        }
+        return;
+      }
+
+      document.getElementById('ffmpeg-note').style.display = 'none';
+      sel.innerHTML = '<option value="">— Select a device —</option>';
+      if (!data.devices.length) {
+        setStatus('No capture devices found.', 'err');
+        return;
+      }
+      const saved = localStorage.getItem('swp-capture-device');
+      data.devices.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        sel.appendChild(opt);
+      });
+      if (saved && data.devices.includes(saved)) sel.value = saved;
+      document.getElementById('btn-start').disabled = !sel.value;
+      setStatus(`Found ${data.devices.length} device${data.devices.length !== 1 ? 's' : ''}.`, 'ok');
+      sel.onchange = () => {
+        localStorage.setItem('swp-capture-device', sel.value);
+        document.getElementById('btn-start').disabled = !sel.value;
+      };
+    } catch(e) {
+      setStatus('Cannot reach server — is start.bat running?', 'err');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function startStream() {
+    const device = document.getElementById('device-select').value;
+    if (!device) return;
+
+    setStatus('Starting FFmpeg...');
+    try {
+      const r = await fetch(`http://localhost:8080/ffmpeg/start?device=${encodeURIComponent(device)}`);
+      const data = await r.json();
+      if (!data.started) { setStatus('Failed to start.', 'err'); return; }
+    } catch(e) { setStatus('Cannot reach server.', 'err'); return; }
+
+    streaming = true;
+    const canvas = document.getElementById('preview-canvas');
+    canvas.style.display = 'block';
+    document.getElementById('placeholder').style.display = 'none';
+    document.getElementById('preview-wrap').classList.add('live');
+    document.getElementById('live-badge').style.display = 'flex';
+    document.getElementById('btn-start').style.display = 'none';
+    document.getElementById('btn-stop').style.display = 'flex';
+    document.getElementById('btn-scan').disabled = true;
+    document.getElementById('device-select').disabled = true;
+    setStatus(`Live from: ${device}`);
+
+    // Give FFmpeg ~1s to write first frame then start drawing
+    setTimeout(drawLoop, 1000);
+  }
+
+  function drawLoop() {
+    if (!streaming) return;
+    const canvas = document.getElementById('preview-canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.onload = () => {
+      const cw = canvas.clientWidth;
+      const ch = canvas.clientHeight;
+      canvas.width = cw;
+      canvas.height = ch;
+      // Letterbox: maintain source aspect ratio
+      const srcRatio = img.naturalWidth / img.naturalHeight;
+      const dstRatio = cw / ch;
+      let dw, dh, dx, dy;
+      if (srcRatio > dstRatio) {
+        dw = cw; dh = cw / srcRatio;
+        dx = 0; dy = (ch - dh) / 2;
+      } else {
+        dh = ch; dw = ch * srcRatio;
+        dx = (cw - dw) / 2; dy = 0;
+      }
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, cw, ch);
+      ctx.drawImage(img, dx, dy, dw, dh);
+      URL.revokeObjectURL(img.src);
+    };
+    // Fetch as blob to avoid browser image caching issues
+    fetch(`http://localhost:8080/ffmpeg/frame?_=${Date.now()}`)
+      .then(r => r.status === 204 ? null : r.blob())
+      .then(blob => { if (blob && streaming) img.src = URL.createObjectURL(blob); })
+      .catch(() => {});
+    if (streaming) setTimeout(drawLoop, 40); // ~25fps
+  }
+
+  async function stopStream() {
+    streaming = false;
+    const canvas = document.getElementById('preview-canvas');
+    canvas.style.display = 'none';
+    document.getElementById('placeholder').style.display = 'block';
+    document.getElementById('preview-wrap').classList.remove('live');
+    document.getElementById('live-badge').style.display = 'none';
+    document.getElementById('btn-start').style.display = 'flex';
+    document.getElementById('btn-stop').style.display = 'none';
+    document.getElementById('btn-scan').disabled = false;
+    document.getElementById('device-select').disabled = false;
+    setStatus('Preview stopped.');
+    try { await fetch('http://localhost:8080/ffmpeg/stop'); } catch(e) {}
+  }
+
+  function setStatus(msg, type = '') {
+    const el = document.getElementById('status-bar');
+    el.textContent = msg;
+    el.className = 'status-bar ' + type;
+  }
+
+  // Auto-scan on load, then auto-start if a device was previously selected
+  scanDevices().then(() => {
+    const sel = document.getElementById('device-select');
+    if (sel.value) startStream();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+node_modules/
+.claude/
+SKILL-Session-Close.md
+brave-app-profile/
+capture-frame.jpg
+debug.log
+equipment.json
+seed-firestore.js
+add-devices.html
+update-h2r.html

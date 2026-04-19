@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Streamwave Equipment</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      min-height: 100vh;
+      color: #e2e8f0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    /* ── NAV ── */
+    .top-nav {
+      background: rgba(15,23,42,0.95);
+      border-bottom: 1px solid rgba(96,165,250,0.2);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .top-nav h1 { font-size: 1.25rem; font-weight: 700; color: #60a5fa; margin: 0; }
+    .top-nav .subtitle { font-size: 0.78rem; color: #64748b; margin-left: auto; }
+    .btn-edit-mode {
+      background: rgba(251,191,36,0.15);
+      border: 1px solid rgba(251,191,36,0.3);
+      color: #fbbf24;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+    .btn-edit-mode:hover { background: rgba(251,191,36,0.25); }
+    .btn-edit-mode.active { background: #fbbf24; color: #0f172a; border-color: #fbbf24; }
+    .btn-add-device {
+      background: rgba(74,222,128,0.15);
+      border: 1px solid rgba(74,222,128,0.3);
+      color: #4ade80;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.2s;
+    }
+    .btn-add-device:hover { background: rgba(74,222,128,0.25); }
+    .btn-add-device.visible { display: flex; }
+
+    /* ── SEARCH ── */
+    .search-bar { padding: 16px 20px 0; }
+    .search-wrap { position: relative; max-width: 380px; }
+    .search-wrap i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #475569; font-size: 0.85rem; pointer-events: none; }
+    #search-input {
+      width: 100%;
+      background: rgba(30,41,59,0.8);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      color: #e2e8f0;
+      padding: 8px 36px;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #search-input::placeholder { color: #475569; }
+    #search-input:focus { border-color: rgba(96,165,250,0.5); }
+    .search-clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #475569; cursor: pointer; font-size: 0.8rem; display: none; padding: 2px 4px; }
+    .search-clear:hover { color: #94a3b8; }
+
+    /* ── FILTERS ── */
+    .filter-bar { padding: 10px 20px 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .filter-btn {
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(30,41,59,0.6);
+      color: #94a3b8;
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 0.83rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-btn:hover { border-color: rgba(255,255,255,0.3); color: #e2e8f0; }
+    .filter-btn.active { color: #0f172a; font-weight: 600; }
+    .filter-btn[data-cat="all"].active        { background: #e2e8f0;  border-color: #e2e8f0; }
+    .filter-btn[data-cat="computing"].active  { background: #60a5fa;  border-color: #60a5fa; }
+    .filter-btn[data-cat="network"].active    { background: #f59e0b;  border-color: #f59e0b; }
+    .filter-btn[data-cat="cameras"].active    { background: #34d399;  border-color: #34d399; }
+    .filter-btn[data-cat="encoders"].active   { background: #f472b6;  border-color: #f472b6; }
+    .filter-btn[data-cat="atems"].active      { background: #a78bfa;  border-color: #a78bfa; }
+    .filter-btn[data-cat="hyperdecks"].active { background: #fb923c;  border-color: #fb923c; }
+    .filter-btn[data-cat="routing"].active    { background: #38bdf8;  border-color: #38bdf8; }
+    .filter-btn[data-cat="software"].active   { background: #4ade80;  border-color: #4ade80; }
+    .filter-btn[data-cat="h2r"].active        { background: #e879f9;  border-color: #e879f9; }
+
+    .sort-select {
+      margin-left: auto;
+      background: rgba(30,41,59,0.6);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #94a3b8;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.83rem;
+      cursor: pointer;
+      outline: none;
+    }
+    .sort-select:hover { border-color: rgba(255,255,255,0.3); color: #e2e8f0; }
+
+    /* ── CARDS ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+      padding: 12px 20px 20px;
+    }
+    .eq-card {
+      background: rgba(30,41,59,0.8);
+      border: 1px solid rgba(96,165,250,0.15);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.3s, filter 0.3s;
+      position: relative;
+    }
+    .eq-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .eq-card.active-frame { border-color: rgba(96,165,250,0.6); box-shadow: 0 0 0 2px rgba(96,165,250,0.3); }
+    .eq-card.online  { background: rgba(36,52,74,0.95); border-color: rgba(96,165,250,0.35); box-shadow: 0 0 18px rgba(96,165,250,0.08), 0 4px 16px rgba(0,0,0,0.3); filter: brightness(1.12); }
+    .eq-card.online:hover { box-shadow: 0 0 28px rgba(96,165,250,0.15), 0 8px 24px rgba(0,0,0,0.4); filter: brightness(1.18); }
+    .eq-card.offline { opacity: 0.6; filter: grayscale(40%) brightness(0.85); }
+    .eq-card.offline:hover { opacity: 0.8; filter: grayscale(20%) brightness(0.95); }
+
+    /* Edit mode overlay buttons */
+    .card-edit-actions {
+      display: none;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      gap: 6px;
+    }
+    .edit-mode .card-edit-actions { display: flex; }
+    .card-edit-btn {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      border: none;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .card-edit-btn.edit  { background: #fbbf24; color: #0f172a; }
+    .card-edit-btn.edit:hover  { background: #fde68a; }
+    .card-edit-btn.delete { background: #ef4444; color: #fff; }
+    .card-edit-btn.delete:hover { background: #f87171; }
+
+    .card-header-row { display: flex; align-items: flex-start; gap: 10px; }
+    .card-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
+    .cat-computing  .card-icon { background: rgba(96,165,250,0.15);  color: #60a5fa; }
+    .cat-network    .card-icon { background: rgba(245,158,11,0.15);  color: #f59e0b; }
+    .cat-cameras    .card-icon { background: rgba(52,211,153,0.15);  color: #34d399; }
+    .cat-encoders   .card-icon { background: rgba(244,114,182,0.15); color: #f472b6; }
+    .cat-atems      .card-icon { background: rgba(167,139,250,0.15); color: #a78bfa; }
+    .cat-hyperdecks .card-icon { background: rgba(251,146,60,0.15);  color: #fb923c; }
+    .cat-routing    .card-icon { background: rgba(56,189,248,0.15);  color: #38bdf8; }
+    .cat-software   .card-icon { background: rgba(74,222,128,0.15);  color: #4ade80; }
+
+    .card-title { font-size: 0.95rem; font-weight: 600; color: #f1f5f9; line-height: 1.2; }
+    .cat-badge { font-size: 0.68rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-left: auto; flex-shrink: 0; }
+    .cat-computing  .cat-badge { background: rgba(96,165,250,0.2);  color: #60a5fa; }
+    .cat-network    .cat-badge { background: rgba(245,158,11,0.2);  color: #f59e0b; }
+    .cat-cameras    .cat-badge { background: rgba(52,211,153,0.2);  color: #34d399; }
+    .cat-encoders   .cat-badge { background: rgba(244,114,182,0.2); color: #f472b6; }
+    .cat-atems      .cat-badge { background: rgba(167,139,250,0.2); color: #a78bfa; }
+    .cat-hyperdecks .cat-badge { background: rgba(251,146,60,0.2);  color: #fb923c; }
+    .cat-routing    .cat-badge { background: rgba(56,189,248,0.2);  color: #38bdf8; }
+    .cat-software   .cat-badge { background: rgba(74,222,128,0.2);  color: #4ade80; }
+
+    .card-ip { font-family: 'Courier New', monospace; font-size: 0.82rem; color: #ffffff; display: flex; align-items: center; gap: 6px; }
+    .eq-card.offline .card-ip { color: #ffffff; }
+    .card-ip .no-ip { color: #475569; font-style: italic; font-family: inherit; }
+    .card-meta { font-size: 0.76rem; color: #64748b; display: flex; flex-direction: column; gap: 2px; }
+    .card-meta span { display: flex; align-items: center; gap: 5px; }
+    .card-notes { font-size: 0.75rem; color: #475569; font-style: italic; }
+
+    .status-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; background: #334155; transition: background 0.3s, box-shadow 0.3s; }
+    .status-dot.online  { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.6); }
+    .status-dot.offline { background: #ff2020; box-shadow: 0 0 10px rgba(255,32,32,1); }
+
+    .card-actions { display: flex; gap: 8px; margin-top: 4px; }
+    .btn-frame, .btn-tab, .btn-launch, .btn-popout {
+      flex: 1; border: none; border-radius: 8px; padding: 8px; font-size: 0.78rem; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;
+      transition: opacity 0.15s, transform 0.1s; touch-action: manipulation; min-height: 36px;
+    }
+    .btn-frame:active, .btn-tab:active, .btn-launch:active, .btn-popout:active { transform: scale(0.97); }
+    .btn-frame  { background: rgba(96,165,250,0.2); color: #60a5fa; }
+    .btn-frame:hover  { background: rgba(96,165,250,0.3); }
+    .btn-tab    { background: rgba(100,116,139,0.2); color: #94a3b8; }
+    .btn-tab:hover    { background: rgba(100,116,139,0.3); }
+    .btn-launch { background: rgba(74,222,128,0.2); color: #4ade80; }
+    .btn-launch:hover { background: rgba(74,222,128,0.3); }
+    .btn-launch.launching { opacity: 0.7; cursor: wait; }
+    .btn-popout { flex: 0 0 36px; background: rgba(167,139,250,0.2); color: #a78bfa; }
+    .btn-popout:hover { background: rgba(167,139,250,0.3); }
+    .btn-frame:disabled, .btn-tab:disabled, .btn-popout:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── IFRAME PANEL ── */
+    #frame-panel { display: none; position: sticky; bottom: 0; background: rgba(15,23,42,0.98); border-top: 2px solid rgba(96,165,250,0.3); z-index: 50; }
+    .frame-bar { display: flex; align-items: center; padding: 10px 16px; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .frame-bar .frame-title { font-size: 0.9rem; font-weight: 600; color: #60a5fa; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .frame-bar .frame-ip { font-family: monospace; font-size: 0.78rem; color: #64748b; }
+    .frame-ctrl-btn { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); color: #94a3b8; border-radius: 6px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; transition: background 0.15s; }
+    .frame-ctrl-btn:hover { background: rgba(255,255,255,0.12); color: #e2e8f0; }
+    #frame-wrapper { position: relative; height: 480px; transition: height 0.2s; }
+    #frame-wrapper.fullscreen { height: calc(100vh - 52px); }
+    #device-frame { width: 100%; height: 100%; border: none; background: #000; }
+    #frame-blocked { display: none; position: absolute; inset: 0; background: rgba(15,23,42,0.97); flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 30px; }
+    #frame-blocked i { font-size: 2rem; color: #f59e0b; }
+    #frame-blocked p { color: #94a3b8; font-size: 0.88rem; margin: 0; }
+    #frame-blocked a { background: rgba(96,165,250,0.2); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); border-radius: 8px; padding: 8px 20px; font-size: 0.85rem; font-weight: 600; text-decoration: none; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #1e293b;
+      border: 1px solid rgba(96,165,250,0.2);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .modal-box h2 { font-size: 1.1rem; font-weight: 700; color: #f1f5f9; margin: 0; }
+    .form-row { display: flex; flex-direction: column; gap: 5px; }
+    .form-row label { font-size: 0.78rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+    .form-row input, .form-row select, .form-row textarea {
+      background: rgba(15,23,42,0.7);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      color: #e2e8f0;
+      padding: 9px 12px;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+    .form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: rgba(96,165,250,0.5); }
+    .form-row select option { background: #1e293b; }
+    .form-row textarea { resize: vertical; min-height: 60px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 4px; }
+    .btn-cancel { background: rgba(100,116,139,0.2); border: 1px solid rgba(100,116,139,0.3); color: #94a3b8; border-radius: 8px; padding: 9px 20px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+    .btn-cancel:hover { background: rgba(100,116,139,0.35); }
+    .btn-save { background: #60a5fa; border: none; color: #0f172a; border-radius: 8px; padding: 9px 24px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+    .btn-save:hover { background: #93c5fd; }
+    .btn-save:disabled { opacity: 0.5; cursor: wait; }
+
+    /* Delete confirm */
+    .modal-box.confirm { max-width: 380px; }
+    .confirm-msg { color: #94a3b8; font-size: 0.9rem; line-height: 1.5; }
+    .confirm-name { color: #f1f5f9; font-weight: 600; }
+    .btn-delete-confirm { background: #ef4444; border: none; color: #fff; border-radius: 8px; padding: 9px 24px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+    .btn-delete-confirm:hover { background: #f87171; }
+
+    .empty-state { text-align: center; padding: 60px 20px; color: #475569; display: none; }
+    .empty-state i { font-size: 2.5rem; margin-bottom: 12px; }
+
+    @media (max-width: 575px) {
+      .cards-grid { grid-template-columns: 1fr; }
+      #frame-wrapper { height: 320px; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="top-nav">
+  <i class="fa-solid fa-tower-broadcast" style="color:#60a5fa;font-size:1.2rem;"></i>
+  <h1>Streamwave Equipment</h1>
+  <span class="subtitle" id="device-count"></span>
+  <a href="http://localhost:8080/capture.html" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:8px;padding:6px 14px;font-size:0.8rem;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:6px;">
+    <i class="fa-solid fa-circle-dot" style="animation:pulse 1s infinite;"></i> Multiview / Stream
+  </a>
+  <button class="btn-add-device" id="btn-add" onclick="openAddModal()">
+    <i class="fa-solid fa-plus"></i> Add Device
+  </button>
+  <button class="btn-edit-mode" id="btn-edit-mode" onclick="toggleEditMode()">
+    <i class="fa-solid fa-pen-to-square"></i> Edit
+  </button>
+</nav>
+
+<!-- SEARCH -->
+<div class="search-bar">
+  <div class="search-wrap">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <input type="text" id="search-input" placeholder="Search by name or IP..." autocomplete="off" />
+    <button class="search-clear" id="search-clear" onclick="clearSearch()" title="Clear">
+      <i class="fa-solid fa-xmark"></i>
+    </button>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="filter-bar">
+  <button class="filter-btn active" data-cat="all"><i class="fa-solid fa-layer-group"></i> All</button>
+  <button class="filter-btn" data-cat="computing"><i class="fa-solid fa-microchip"></i> Computing</button>
+  <button class="filter-btn" data-cat="network"><i class="fa-solid fa-network-wired"></i> Network</button>
+  <button class="filter-btn" data-cat="cameras"><i class="fa-solid fa-video"></i> Cameras</button>
+  <button class="filter-btn" data-cat="encoders"><i class="fa-solid fa-broadcast-tower"></i> Encoders</button>
+  <button class="filter-btn" data-cat="atems"><i class="fa-solid fa-sliders"></i> ATEMs</button>
+  <button class="filter-btn" data-cat="hyperdecks"><i class="fa-solid fa-hdd"></i> HyperDecks</button>
+  <button class="filter-btn" data-cat="routing"><i class="fa-solid fa-diagram-project"></i> Routing</button>
+  <button class="filter-btn" data-cat="software"><i class="fa-solid fa-rocket"></i> Software</button>
+  <button class="filter-btn" data-cat="h2r"><i class="fa-solid fa-layer-group"></i> H2R</button>
+  <select class="sort-select" id="sort-select" onchange="render()">
+    <option value="name"><i class="fa-solid fa-arrow-down-a-z"></i> Name A–Z</option>
+    <option value="category">Category</option>
+    <option value="status">Status (online first)</option>
+    <option value="ip">IP Address</option>
+  </select>
+</div>
+
+<!-- CARDS -->
+<div class="cards-grid" id="cards-grid"></div>
+<div class="empty-state" id="empty-state">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <p>No devices found.</p>
+</div>
+
+<!-- IFRAME PANEL -->
+<div id="frame-panel">
+  <div class="frame-bar">
+    <span class="frame-title" id="frame-title">—</span>
+    <span class="frame-ip" id="frame-ip"></span>
+    <button class="frame-ctrl-btn" onclick="toggleFullscreen()"><i class="fa-solid fa-expand" id="fullscreen-icon"></i></button>
+    <button class="frame-ctrl-btn" onclick="openNewTab()"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+    <button class="frame-ctrl-btn" onclick="closeFrame()"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div id="frame-wrapper">
+    <iframe id="device-frame" sandbox="allow-forms allow-scripts allow-same-origin allow-popups" title="Device UI"></iframe>
+    <div id="frame-blocked">
+      <i class="fa-solid fa-ban"></i>
+      <p>This device's web interface blocks embedding.<br>Open it directly instead.</p>
+      <a id="blocked-link" href="#" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open Device UI</a>
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal" onclick="handleOverlayClick(event,'edit-modal')">
+  <div class="modal-box">
+    <h2 id="modal-title">Add Device</h2>
+    <input type="hidden" id="edit-doc-id" />
+
+    <div class="form-grid">
+      <div class="form-row" style="grid-column:1/-1">
+        <label>Device Name *</label>
+        <input type="text" id="f-name" placeholder="e.g. NDX PTZ Camera" />
+      </div>
+      <div class="form-row">
+        <label>Category *</label>
+        <select id="f-category">
+          <option value="computing">Computing</option>
+          <option value="network">Network</option>
+          <option value="cameras">Cameras</option>
+          <option value="encoders">Encoders</option>
+          <option value="atems">ATEMs</option>
+          <option value="hyperdecks">HyperDecks</option>
+          <option value="routing">Routing</option>
+          <option value="software">Software</option>
+          <option value="h2r">H2R</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Icon</label>
+        <select id="f-icon">
+          <option value="fa-microchip">Microchip</option>
+          <option value="fa-desktop">Desktop</option>
+          <option value="fa-laptop">Laptop</option>
+          <option value="fa-server">Server</option>
+          <option value="fa-network-wired">Network</option>
+          <option value="fa-wifi">WiFi</option>
+          <option value="fa-video">Camera</option>
+          <option value="fa-gamepad">Controller</option>
+          <option value="fa-broadcast-tower">Broadcast Tower</option>
+          <option value="fa-film">Film</option>
+          <option value="fa-globe">Globe</option>
+          <option value="fa-sliders">Sliders</option>
+          <option value="fa-hdd">HDD</option>
+          <option value="fa-diagram-project">Diagram</option>
+          <option value="fa-tv">TV</option>
+          <option value="fa-gear">Gear</option>
+          <option value="fa-circle-play">Play</option>
+          <option value="fa-rocket">Rocket</option>
+          <option value="fa-terminal">Terminal</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>IP Address</label>
+        <input type="text" id="f-ip" placeholder="192.168.0.200" />
+      </div>
+      <div class="form-row">
+        <label>App Key (software only)</label>
+        <input type="text" id="f-appkey" placeholder="e.g. obs-studio" />
+      </div>
+      <div class="form-row" style="grid-column:1/-1">
+        <label>App Shortcut / Executable Path</label>
+        <input type="text" id="f-apppath" placeholder="C:\Program Files\OBS Studio\bin\64bit\obs64.exe" />
+        <small style="color:#475569;font-size:0.74rem;margin-top:3px;">.exe or .lnk shortcut path — used to launch the app directly</small>
+      </div>
+      <div class="form-row">
+        <label>Username</label>
+        <input type="text" id="f-user" placeholder="admin" />
+      </div>
+      <div class="form-row">
+        <label>Password</label>
+        <input type="text" id="f-pass" placeholder="••••••" />
+      </div>
+      <div class="form-row" style="grid-column:1/-1">
+        <label>Notes</label>
+        <textarea id="f-notes" placeholder="Any extra info..."></textarea>
+      </div>
+    </div>
+
+    <div id="modal-error" style="color:#f87171;font-size:0.82rem;display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('edit-modal')">Cancel</button>
+      <button class="btn-save" id="btn-save" onclick="saveDevice()"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="delete-modal" onclick="handleOverlayClick(event,'delete-modal')">
+  <div class="modal-box confirm">
+    <h2>Delete Device?</h2>
+    <p class="confirm-msg">This will permanently remove <span class="confirm-name" id="delete-name"></span> from the equipment list.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal('delete-modal')">Cancel</button>
+      <button class="btn-delete-confirm" id="btn-confirm-delete" onclick="confirmDelete()">
+        <i class="fa-solid fa-trash"></i> Delete
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+  // ── Firebase init ────────────────────────────────────────────────────────
+  firebase.initializeApp({
+    apiKey: "AIzaSyDwa2WTmuCkb-INeP-JeFdO6dDay-E-hQQ",
+    authDomain: "swptools-3b401.firebaseapp.com",
+    projectId: "swptools-3b401",
+    storageBucket: "swptools-3b401.firebasestorage.app",
+    messagingSenderId: "753172874987",
+    appId: "1:753172874987:web:69cf047204117f055960ae"
+  });
+  const db = firebase.firestore();
+
+  // ── State ────────────────────────────────────────────────────────────────
+  let EQUIPMENT = [];           // live array from Firestore
+  let activeCategory = 'all';
+  let searchQuery = '';
+  let editMode = false;
+  let activeCardEl = null;
+  let currentUrl = '';
+  let pendingDeleteId = null;
+  const onlineStatus = {};
+
+  const catLabels = {
+    computing: 'Computing', network: 'Network', cameras: 'Cameras',
+    encoders: 'Encoders', atems: 'ATEMs', hyperdecks: 'HyperDecks',
+    routing: 'Routing', software: 'Software', h2r: 'H2R',
+  };
+
+  // ── Firestore real-time listener ─────────────────────────────────────────
+  db.collection('equipment').orderBy('name').onSnapshot(snapshot => {
+    EQUIPMENT = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    render();
+    pingAll();
+  }, err => console.error('Firestore error:', err));
+
+  // ── Render ───────────────────────────────────────────────────────────────
+  function render() {
+    const grid = document.getElementById('cards-grid');
+    const empty = document.getElementById('empty-state');
+    const q = searchQuery.toLowerCase();
+
+    const sortBy = document.getElementById('sort-select')?.value || 'name';
+
+    const filtered = EQUIPMENT.filter(d => {
+      const catMatch = activeCategory === 'all' || d.category === activeCategory;
+      const searchMatch = !q || d.name.toLowerCase().includes(q) || (d.ip||'').includes(q) || (d.notes||'').toLowerCase().includes(q);
+      return catMatch && searchMatch;
+    }).sort((a, b) => {
+      if (sortBy === 'name')     return a.name.localeCompare(b.name);
+      if (sortBy === 'category') return (a.category||'').localeCompare(b.category||'') || a.name.localeCompare(b.name);
+      if (sortBy === 'status') {
+        const sa = onlineStatus[a.id] === true ? 0 : onlineStatus[a.id] === false ? 2 : 1;
+        const sb = onlineStatus[b.id] === true ? 0 : onlineStatus[b.id] === false ? 2 : 1;
+        return sa - sb || a.name.localeCompare(b.name);
+      }
+      if (sortBy === 'ip') {
+        const ia = (a.ip||'').split('.').map(n => parseInt(n)||0);
+        const ib = (b.ip||'').split('.').map(n => parseInt(n)||0);
+        for (let i = 0; i < 4; i++) { if (ia[i] !== ib[i]) return (ia[i]||0) - (ib[i]||0); }
+        return 0;
+      }
+      return 0;
+    });
+
+    document.getElementById('device-count').textContent =
+      filtered.length + ' device' + (filtered.length !== 1 ? 's' : '');
+
+    if (!filtered.length) {
+      grid.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    grid.innerHTML = filtered.map(d => {
+      const hasIp = !!d.ip;
+      const url = hasIp ? 'http://' + d.ip : '';
+      const offlineCls = d.category === 'h2r' ? '' : onlineStatus[d.id] === false ? ' offline' : onlineStatus[d.id] === true ? ' online' : '';
+      return `
+      <div class="eq-card cat-${d.category}${offlineCls}" id="card-${d.id}">
+        <div class="card-edit-actions">
+          <button class="card-edit-btn edit" onclick="openEditModal('${d.id}')" title="Edit"><i class="fa-solid fa-pen"></i></button>
+          <button class="card-edit-btn delete" onclick="openDeleteModal('${d.id}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
+        </div>
+        <div class="card-header-row">
+          <div class="card-icon"><i class="fa-solid ${d.icon||'fa-server'}"></i></div>
+          <div style="flex:1;min-width:0;">
+            <div class="card-title">${esc(d.name)}</div>
+          </div>
+          <span class="cat-badge">${catLabels[d.category]||d.category}</span>
+        </div>
+        <div class="card-ip">
+          ${!(d.appKey||d.appPath) ? `<span class="status-dot ${onlineStatus[d.id] === true ? 'online' : onlineStatus[d.id] === false ? 'offline' : ''}" id="status-${d.id}" title="Checking..."></span>` : ''}
+          ${hasIp ? esc(d.ip) : (d.appKey||d.appPath) ? '<span class="no-ip">Local application</span>' : '<span class="no-ip">No IP assigned</span>'}
+        </div>
+        ${(d.user || d.pass) ? `
+        <div class="card-meta">
+          ${d.user ? `<span><i class="fa-solid fa-user" style="width:12px;"></i>${esc(d.user)}</span>` : ''}
+          ${d.pass ? `<span><i class="fa-solid fa-key" style="width:12px;"></i>${esc(d.pass)}</span>` : ''}
+        </div>` : ''}
+        ${d.notes ? `<div class="card-notes">${esc(d.notes)}</div>` : ''}
+        <div class="card-actions">
+          ${(d.appKey||d.appPath) ? `
+          <button class="btn-launch" id="launch-${d.id}" onclick="launchApp('${d.id}')">
+            <i class="fa-solid fa-rocket"></i> Launch
+          </button>` : `
+          <button class="btn-frame" onclick="openFrame('${d.id}')" ${!hasIp ? 'disabled title="No IP assigned"' : ''}>
+            <i class="fa-solid fa-table-columns"></i> Browse
+          </button>
+          <button class="btn-tab" onclick="openTab('${url}')" ${!hasIp ? 'disabled title="No IP assigned"' : ''}>
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> New Tab
+          </button>
+          <button class="btn-popout" onclick="popOut('${url}')" ${!hasIp ? 'disabled title="No IP assigned"' : ''} title="Open in app window (no restrictions)">
+            <i class="fa-solid fa-window-restore"></i>
+          </button>`}
+        </div>
+      </div>`;
+    }).join('');
+
+    if (editMode) document.getElementById('cards-grid').classList.add('edit-mode');
+  }
+
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Edit mode ────────────────────────────────────────────────────────────
+  function toggleEditMode() {
+    editMode = !editMode;
+    const btn = document.getElementById('btn-edit-mode');
+    const addBtn = document.getElementById('btn-add');
+    const grid = document.getElementById('cards-grid');
+    btn.classList.toggle('active', editMode);
+    btn.innerHTML = editMode
+      ? '<i class="fa-solid fa-check"></i> Done'
+      : '<i class="fa-solid fa-pen-to-square"></i> Edit';
+    addBtn.classList.toggle('visible', editMode);
+    grid.classList.toggle('edit-mode', editMode);
+  }
+
+  // ── Add / Edit modal ─────────────────────────────────────────────────────
+  function openAddModal() {
+    document.getElementById('modal-title').textContent = 'Add Device';
+    document.getElementById('edit-doc-id').value = '';
+    document.getElementById('f-name').value = '';
+    document.getElementById('f-category').value = 'computing';
+    document.getElementById('f-icon').value = 'fa-server';
+    document.getElementById('f-ip').value = '';
+    document.getElementById('f-appkey').value = '';
+    document.getElementById('f-apppath').value = '';
+    document.getElementById('f-user').value = '';
+    document.getElementById('f-pass').value = '';
+    document.getElementById('f-notes').value = '';
+    document.getElementById('modal-error').style.display = 'none';
+    document.getElementById('edit-modal').classList.add('open');
+  }
+
+  function openEditModal(id) {
+    const d = EQUIPMENT.find(e => e.id === id);
+    if (!d) return;
+    document.getElementById('modal-title').textContent = 'Edit Device';
+    document.getElementById('edit-doc-id').value = id;
+    document.getElementById('f-name').value = d.name || '';
+    document.getElementById('f-category').value = d.category || 'computing';
+    document.getElementById('f-icon').value = d.icon || 'fa-server';
+    document.getElementById('f-ip').value = d.ip || '';
+    document.getElementById('f-appkey').value = d.appKey || '';
+    document.getElementById('f-apppath').value = d.appPath || '';
+    document.getElementById('f-user').value = d.user || '';
+    document.getElementById('f-pass').value = d.pass || '';
+    document.getElementById('f-notes').value = d.notes || '';
+    document.getElementById('modal-error').style.display = 'none';
+    document.getElementById('edit-modal').classList.add('open');
+  }
+
+  async function saveDevice() {
+    const name = document.getElementById('f-name').value.trim();
+    if (!name) { showModalError('Device name is required.'); return; }
+
+    const data = {
+      name,
+      category: document.getElementById('f-category').value,
+      icon:     document.getElementById('f-icon').value,
+      ip:       document.getElementById('f-ip').value.trim(),
+      appKey:   document.getElementById('f-appkey').value.trim(),
+      appPath:  document.getElementById('f-apppath').value.trim(),
+      user:     document.getElementById('f-user').value.trim(),
+      pass:     document.getElementById('f-pass').value.trim(),
+      notes:    document.getElementById('f-notes').value.trim(),
+    };
+
+    const btn = document.getElementById('btn-save');
+    btn.disabled = true;
+    try {
+      const docId = document.getElementById('edit-doc-id').value;
+      if (docId) {
+        await db.collection('equipment').doc(docId).update(data);
+      } else {
+        await db.collection('equipment').add(data);
+      }
+      closeModal('edit-modal');
+    } catch (err) {
+      showModalError('Save failed: ' + err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function showModalError(msg) {
+    const el = document.getElementById('modal-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  // ── Delete modal ─────────────────────────────────────────────────────────
+  function openDeleteModal(id) {
+    const d = EQUIPMENT.find(e => e.id === id);
+    if (!d) return;
+    pendingDeleteId = id;
+    document.getElementById('delete-name').textContent = d.name;
+    document.getElementById('delete-modal').classList.add('open');
+  }
+
+  async function confirmDelete() {
+    if (!pendingDeleteId) return;
+    const btn = document.getElementById('btn-confirm-delete');
+    btn.disabled = true;
+    try {
+      await db.collection('equipment').doc(pendingDeleteId).delete();
+      closeModal('delete-modal');
+    } catch (err) {
+      alert('Delete failed: ' + err.message);
+    } finally {
+      btn.disabled = false;
+      pendingDeleteId = null;
+    }
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  function handleOverlayClick(e, id) {
+    if (e.target === document.getElementById(id)) closeModal(id);
+  }
+
+  // ── Ping ─────────────────────────────────────────────────────────────────
+  function pingDevice(d) {
+    if (!d.ip || d.appKey) return;
+    const pingIp = d.ip.split(':')[0].split('/')[0]; // extract bare IP from "host:port/path"
+    fetch(`http://localhost:8080/ping?ip=${encodeURIComponent(pingIp)}`)
+      .then(r => r.json())
+      .then(data => setStatus(d.id, data.online))
+      .catch(() => setStatus(d.id, false));
+  }
+
+  function setStatus(id, online) {
+    onlineStatus[id] = online;
+    const dot = document.getElementById('status-' + id);
+    if (dot) { dot.className = 'status-dot ' + (online ? 'online' : 'offline'); dot.title = online ? 'Online' : 'Offline'; }
+    const card = document.getElementById('card-' + id);
+    if (card) { card.classList.toggle('online', online); card.classList.toggle('offline', !online); }
+  }
+
+  function pingAll() { EQUIPMENT.forEach(d => pingDevice(d)); }
+
+  // ── Frame panel ──────────────────────────────────────────────────────────
+  function openFrame(id) {
+    const d = EQUIPMENT.find(e => e.id === id);
+    if (!d || !d.ip) return;
+    currentUrl = 'http://' + d.ip;
+    document.getElementById('frame-title').textContent = d.name;
+    document.getElementById('frame-ip').textContent = d.ip;
+    document.getElementById('blocked-link').href = currentUrl;
+    document.getElementById('frame-blocked').style.display = 'none';
+    document.getElementById('device-frame').src = 'http://localhost:8080/proxy?url=' + encodeURIComponent(currentUrl);
+    document.getElementById('frame-panel').style.display = 'block';
+    if (activeCardEl) activeCardEl.classList.remove('active-frame');
+    activeCardEl = document.getElementById('card-' + id);
+    if (activeCardEl) activeCardEl.classList.add('active-frame');
+    setTimeout(() => document.getElementById('frame-panel').scrollIntoView({ behavior: 'smooth', block: 'end' }), 50);
+    document.getElementById('device-frame').onload = () => {
+      try { const doc = document.getElementById('device-frame').contentDocument; if (doc && doc.body && doc.body.innerHTML === '') showBlocked(); } catch(e) {}
+    };
+  }
+
+  function showBlocked() { document.getElementById('frame-blocked').style.display = 'flex'; }
+  function openTab(url) { if (url) window.open(url, '_blank', 'noopener'); }
+  function popOut(url) {
+    if (!url) return;
+    fetch('http://localhost:8080/launch-browser?url=' + encodeURIComponent(url))
+      .catch(() => window.open(url, '_blank', 'noopener'));
+  }
+  function openNewTab() { if (currentUrl) openTab(currentUrl); }
+  function closeFrame() {
+    document.getElementById('frame-panel').style.display = 'none';
+    document.getElementById('device-frame').src = 'about:blank';
+    if (activeCardEl) { activeCardEl.classList.remove('active-frame'); activeCardEl = null; }
+    document.getElementById('frame-wrapper').classList.remove('fullscreen');
+    document.getElementById('fullscreen-icon').className = 'fa-solid fa-expand';
+    currentUrl = '';
+  }
+  function toggleFullscreen() {
+    const w = document.getElementById('frame-wrapper');
+    w.classList.toggle('fullscreen');
+    document.getElementById('fullscreen-icon').className = w.classList.contains('fullscreen') ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
+  }
+
+  // ── App launch ───────────────────────────────────────────────────────────
+  function launchApp(id) {
+    const d = EQUIPMENT.find(e => e.id === id);
+    if (!d) return;
+    const btn = document.getElementById('launch-' + id);
+    if (btn) { btn.classList.add('launching'); btn.disabled = true; }
+
+    const url = d.appPath
+      ? `http://localhost:8080/launch-path?path=${encodeURIComponent(d.appPath)}`
+      : `http://localhost:8080/launch?app=${encodeURIComponent(d.appKey)}`;
+
+    fetch(url)
+      .then(r => r.json())
+      .then(data => { if (!data.launched) alert(`Could not launch ${d.name}:\n${data.error}`); })
+      .catch(() => alert('Server not reachable. Is start.bat running?'))
+      .finally(() => { if (btn) { btn.classList.remove('launching'); btn.disabled = false; } });
+  }
+
+  // ── Search ───────────────────────────────────────────────────────────────
+  const searchInput = document.getElementById('search-input');
+  const searchClear = document.getElementById('search-clear');
+  searchInput.addEventListener('input', () => {
+    searchQuery = searchInput.value.trim();
+    searchClear.style.display = searchQuery ? 'block' : 'none';
+    render();
+  });
+  function clearSearch() { searchInput.value = ''; searchQuery = ''; searchClear.style.display = 'none'; searchInput.focus(); render(); }
+
+  // ── Filter buttons ───────────────────────────────────────────────────────
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeCategory = btn.dataset.cat;
+      closeFrame();
+      render();
+    });
+  });
+
+  // Ping refresh every 30s
+  setInterval(pingAll, 30000);
+</script>
+</body>
+</html>
