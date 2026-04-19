@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Streamwave Equipment</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="GearOps" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="Gearops-trans2.png" />
+  <title>GearOps</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
   <style>
@@ -28,7 +33,7 @@
       z-index: 100;
     }
     .top-nav h1 { font-size: 1.25rem; font-weight: 700; color: #60a5fa; margin: 0; }
-    .top-nav .subtitle { font-size: 0.78rem; color: #64748b; margin-left: auto; }
+    .top-nav .subtitle { font-size: 0.78rem; color: #64748b; margin-left: auto; display: flex; align-items: center; gap: 8px; }
     .btn-edit-mode {
       background: rgba(251,191,36,0.15);
       border: 1px solid rgba(251,191,36,0.3);
@@ -94,8 +99,17 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    .filter-btn:hover { border-color: rgba(255,255,255,0.3); color: #e2e8f0; }
-    .filter-btn.active { color: #0f172a; font-weight: 600; }
+    .filter-btn[data-cat="computing"]  { background: rgba(96,165,250,0.1);  border-color: rgba(96,165,250,0.25);  color: #60a5fa; }
+    .filter-btn[data-cat="network"]    { background: rgba(245,158,11,0.1);  border-color: rgba(245,158,11,0.25);  color: #f59e0b; }
+    .filter-btn[data-cat="cameras"]    { background: rgba(52,211,153,0.1);  border-color: rgba(52,211,153,0.25);  color: #34d399; }
+    .filter-btn[data-cat="encoders"]   { background: rgba(244,114,182,0.1); border-color: rgba(244,114,182,0.25); color: #f472b6; }
+    .filter-btn[data-cat="atems"]      { background: rgba(167,139,250,0.1); border-color: rgba(167,139,250,0.25); color: #a78bfa; }
+    .filter-btn[data-cat="hyperdecks"] { background: rgba(251,146,60,0.1);  border-color: rgba(251,146,60,0.25);  color: #fb923c; }
+    .filter-btn[data-cat="routing"]    { background: rgba(56,189,248,0.1);  border-color: rgba(56,189,248,0.25);  color: #38bdf8; }
+    .filter-btn[data-cat="software"]   { background: rgba(74,222,128,0.1);  border-color: rgba(74,222,128,0.25);  color: #4ade80; }
+    .filter-btn[data-cat="h2r"]        { background: rgba(232,121,249,0.1); border-color: rgba(232,121,249,0.25); color: #e879f9; }
+    .filter-btn:hover { filter: brightness(1.2); }
+    .filter-btn.active { color: #0f172a; font-weight: 600; filter: none; }
     .filter-btn[data-cat="all"].active        { background: #e2e8f0;  border-color: #e2e8f0; }
     .filter-btn[data-cat="computing"].active  { background: #60a5fa;  border-color: #60a5fa; }
     .filter-btn[data-cat="network"].active    { background: #f59e0b;  border-color: #f59e0b; }
@@ -120,6 +134,16 @@
     }
     .sort-select:hover { border-color: rgba(255,255,255,0.3); color: #e2e8f0; }
 
+    .view-toggle { display: flex; gap: 4px; margin-left: 8px; }
+    .view-btn {
+      background: rgba(30,41,59,0.6); border: 1px solid rgba(255,255,255,0.15);
+      color: #64748b; border-radius: 8px; width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.85rem;
+      transition: all 0.15s;
+    }
+    .view-btn:hover { color: #e2e8f0; border-color: rgba(255,255,255,0.3); }
+    .view-btn.active { background: rgba(96,165,250,0.2); border-color: rgba(96,165,250,0.4); color: #60a5fa; }
+
     /* ── CARDS ── */
     .cards-grid {
       display: grid;
@@ -142,8 +166,8 @@
     .eq-card.active-frame { border-color: rgba(96,165,250,0.6); box-shadow: 0 0 0 2px rgba(96,165,250,0.3); }
     .eq-card.online  { background: rgba(36,52,74,0.95); border-color: rgba(96,165,250,0.35); box-shadow: 0 0 18px rgba(96,165,250,0.08), 0 4px 16px rgba(0,0,0,0.3); filter: brightness(1.12); }
     .eq-card.online:hover { box-shadow: 0 0 28px rgba(96,165,250,0.15), 0 8px 24px rgba(0,0,0,0.4); filter: brightness(1.18); }
-    .eq-card.offline { opacity: 0.6; filter: grayscale(40%) brightness(0.85); }
-    .eq-card.offline:hover { opacity: 0.8; filter: grayscale(20%) brightness(0.95); }
+    .eq-card.offline { opacity: 0.8; filter: grayscale(20%) brightness(0.92); }
+    .eq-card.offline:hover { opacity: 1; filter: none; }
 
     /* Edit mode overlay buttons */
     .card-edit-actions {
@@ -179,6 +203,15 @@
     .cat-routing    .card-icon { background: rgba(56,189,248,0.15);  color: #38bdf8; }
     .cat-software   .card-icon { background: rgba(74,222,128,0.15);  color: #4ade80; }
 
+    .eq-card.cat-computing  { background: rgba(96,165,250,0.08);  border-color: rgba(96,165,250,0.2); }
+    .eq-card.cat-network    { background: rgba(245,158,11,0.08);  border-color: rgba(245,158,11,0.2); }
+    .eq-card.cat-cameras    { background: rgba(52,211,153,0.08);  border-color: rgba(52,211,153,0.2); }
+    .eq-card.cat-encoders   { background: rgba(244,114,182,0.08); border-color: rgba(244,114,182,0.2); }
+    .eq-card.cat-atems      { background: rgba(167,139,250,0.08); border-color: rgba(167,139,250,0.2); }
+    .eq-card.cat-hyperdecks { background: rgba(251,146,60,0.08);  border-color: rgba(251,146,60,0.2); }
+    .eq-card.cat-routing    { background: rgba(56,189,248,0.08);  border-color: rgba(56,189,248,0.2); }
+    .eq-card.cat-software   { background: rgba(74,222,128,0.08);  border-color: rgba(74,222,128,0.2); }
+
     .card-title { font-size: 0.95rem; font-weight: 600; color: #f1f5f9; line-height: 1.2; }
     .cat-badge { font-size: 0.68rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-left: auto; flex-shrink: 0; }
     .cat-computing  .cat-badge { background: rgba(96,165,250,0.2);  color: #60a5fa; }
@@ -197,9 +230,47 @@
     .card-meta span { display: flex; align-items: center; gap: 5px; }
     .card-notes { font-size: 0.75rem; color: #475569; font-style: italic; }
 
-    .status-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; background: #334155; transition: background 0.3s, box-shadow 0.3s; }
-    .status-dot.online  { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.6); }
-    .status-dot.offline { background: #ff2020; box-shadow: 0 0 10px rgba(255,32,32,1); }
+    .status-dot { display: none; }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 20px;
+      background: rgba(51,65,85,0.6); color: #475569; border: 1px solid rgba(255,255,255,0.08);
+      transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+    }
+    .status-badge::before {
+      content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0;
+    }
+    .status-badge.online  { background: rgba(34,197,94,0.15);  color: #22c55e; border-color: rgba(34,197,94,0.3);  box-shadow: 0 0 8px rgba(34,197,94,0.2); }
+    .status-badge.offline { background: rgba(255,32,32,0.15);  color: #ff4444; border-color: rgba(255,32,32,0.3);  box-shadow: 0 0 8px rgba(255,32,32,0.2); }
+
+    .companion-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 20px; border: 1px solid; width: fit-content;
+      transition: all 0.3s;
+    }
+    .companion-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .companion-badge.streaming  { background: rgba(255,32,32,0.15);  color: #ff4444; border-color: rgba(255,32,32,0.3);  box-shadow: 0 0 8px rgba(255,32,32,0.3); animation: pulse-green 2s infinite; }
+    .companion-badge.connecting { background: rgba(251,191,36,0.15); color: #fbbf24; border-color: rgba(251,191,36,0.3); animation: pulse-green 1s infinite; }
+    .companion-badge.idle       { background: rgba(34,197,94,0.15);  color: #22c55e; border-color: rgba(34,197,94,0.3);  box-shadow: 0 0 8px rgba(34,197,94,0.2); }
+    @keyframes pulse-green { 0%,100% { box-shadow: 0 0 6px rgba(34,197,94,0.3); } 50% { box-shadow: 0 0 14px rgba(34,197,94,0.7); } }
+    .companion-text { font-size: 0.78rem; color: #94a3b8; }
+    .companion-text-label { color: #64748b; font-size: 0.72rem; }
+
+    /* ── LIST VIEW ── */
+    .cards-grid.list-view { display: flex; flex-direction: column; gap: 6px; }
+    .cards-grid.list-view .eq-card {
+      flex-direction: row; align-items: center; gap: 12px; padding: 10px 16px;
+    }
+    .cards-grid.list-view .card-edit-actions { top: 50%; transform: translateY(-50%); }
+    .cards-grid.list-view .card-header-row { flex: 0 0 220px; min-width: 0; gap: 8px; }
+    .cards-grid.list-view .cat-badge { display: none; }
+    .cards-grid.list-view .card-ip { flex: 0 0 200px; }
+    .cards-grid.list-view .card-meta { flex-direction: row; gap: 14px; flex: 1; }
+    .cards-grid.list-view .card-notes { flex: 1; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cards-grid.list-view .card-actions { margin-top: 0; flex: 0 0 auto; }
 
     .card-actions { display: flex; gap: 8px; margin-top: 4px; }
     .btn-frame, .btn-tab, .btn-launch, .btn-popout {
@@ -305,11 +376,10 @@
 
 <!-- NAV -->
 <nav class="top-nav">
-  <i class="fa-solid fa-tower-broadcast" style="color:#60a5fa;font-size:1.2rem;"></i>
-  <h1>Streamwave Equipment</h1>
+  <img src="Gearops-trans2.png" alt="GearOps" style="height:56px;width:auto;" />
   <span class="subtitle" id="device-count"></span>
-  <a href="http://localhost:8080/capture.html" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:8px;padding:6px 14px;font-size:0.8rem;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:6px;">
-    <i class="fa-solid fa-circle-dot" style="animation:pulse 1s infinite;"></i> Multiview / Stream
+  <a href="/capture.html" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:8px;padding:6px 14px;font-size:0.8rem;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:6px;">
+    <img src="control-room.svg" alt="" style="height:18px;width:auto;filter:invert(65%) sepia(80%) saturate(600%) hue-rotate(340deg) brightness(1.1);" /> Control Room
   </a>
   <button class="btn-add-device" id="btn-add" onclick="openAddModal()">
     <i class="fa-solid fa-plus"></i> Add Device
@@ -320,7 +390,8 @@
 </nav>
 
 <!-- SEARCH -->
-<div class="search-bar">
+<div style="position:sticky;top:57px;z-index:90;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);border-bottom:1px solid rgba(255,255,255,0.06);">
+<div class="search-bar" style="display:flex;align-items:center;gap:10px;">
   <div class="search-wrap">
     <i class="fa-solid fa-magnifying-glass"></i>
     <input type="text" id="search-input" placeholder="Search by name or IP..." autocomplete="off" />
@@ -328,6 +399,12 @@
       <i class="fa-solid fa-xmark"></i>
     </button>
   </div>
+  <select class="sort-select" id="sort-select" onchange="render()" style="margin-left:0;">
+    <option value="name">Name A–Z</option>
+    <option value="category">Category</option>
+    <option value="status">Status (online first)</option>
+    <option value="ip">IP Address</option>
+  </select>
 </div>
 
 <!-- FILTERS -->
@@ -342,12 +419,11 @@
   <button class="filter-btn" data-cat="routing"><i class="fa-solid fa-diagram-project"></i> Routing</button>
   <button class="filter-btn" data-cat="software"><i class="fa-solid fa-rocket"></i> Software</button>
   <button class="filter-btn" data-cat="h2r"><i class="fa-solid fa-layer-group"></i> H2R</button>
-  <select class="sort-select" id="sort-select" onchange="render()">
-    <option value="name"><i class="fa-solid fa-arrow-down-a-z"></i> Name A–Z</option>
-    <option value="category">Category</option>
-    <option value="status">Status (online first)</option>
-    <option value="ip">IP Address</option>
-  </select>
+  <div class="view-toggle">
+    <button class="view-btn active" id="view-cards" onclick="setView('cards')" title="Card view"><i class="fa-solid fa-table-cells-large"></i></button>
+    <button class="view-btn" id="view-list" onclick="setView('list')" title="List view"><i class="fa-solid fa-list"></i></button>
+  </div>
+</div>
 </div>
 
 <!-- CARDS -->
@@ -450,6 +526,39 @@
         <label>Notes</label>
         <textarea id="f-notes" placeholder="Any extra info..."></textarea>
       </div>
+      <div class="form-row" style="grid-column:1/-1; flex-direction:row; align-items:center; gap:10px;">
+        <label style="margin:0; cursor:pointer; display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="f-monitor" style="width:16px;height:16px;accent-color:#22c55e;cursor:pointer;" />
+          Monitor online/offline status
+        </label>
+      </div>
+      <div class="form-row" style="grid-column:1/-1; flex-direction:row; align-items:center; gap:10px;">
+        <label style="margin:0; cursor:pointer; display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="f-browser-enabled" style="width:16px;height:16px;accent-color:#60a5fa;cursor:pointer;" />
+          Browser site enabled (show Browse / New Tab / Popout buttons)
+        </label>
+      </div>
+
+      <!-- Companion Variables -->
+      <div class="form-row" style="grid-column:1/-1; border-top:1px solid rgba(255,255,255,0.08); padding-top:14px; margin-top:4px;">
+        <label style="color:#a78bfa; font-weight:700; display:flex; align-items:center; gap:10px;">
+          <span><i class="fa-solid fa-circle-dot" style="margin-right:6px;"></i>Companion Integration</span>
+          <button type="button" onclick="openModal('help-modal')" title="Companion setup help" style="background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);color:#818cf8;border-radius:6px;padding:3px 10px;font-size:0.75rem;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;">
+            <i class="fa-solid fa-circle-question"></i> Help
+          </button>
+        </label>
+      </div>
+      <div class="form-row" style="grid-column:1/-1">
+        <label>Companion Connection Label</label>
+        <input type="text" id="f-companion-label" placeholder="e.g. WebPresenter" />
+        <small style="color:#475569;font-size:0.74rem;margin-top:3px;">The label of this device's connection in Bitfocus Companion</small>
+      </div>
+      <div class="form-row" style="grid-column:1/-1">
+        <label>Companion Variables</label>
+        <small style="color:#475569;font-size:0.74rem;margin-bottom:8px;display:block;">One per line. Format: <code style="color:#94a3b8">key | Label | badge|text</code><br>
+        Example: <code style="color:#94a3b8">stream_state | Streaming | badge</code> or <code style="color:#94a3b8">stream_duration | Duration | text</code></small>
+        <textarea id="f-companion-vars" placeholder="stream_state | Streaming State | badge&#10;stream_duration | Duration | text" style="font-family:monospace;font-size:0.8rem;min-height:90px;"></textarea>
+      </div>
     </div>
 
     <div id="modal-error" style="color:#f87171;font-size:0.82rem;display:none;"></div>
@@ -474,11 +583,65 @@
   </div>
 </div>
 
+<!-- HELP MODAL -->
+<div class="modal-overlay" id="help-modal" onclick="handleOverlayClick(event,'help-modal')">
+  <div class="modal-box" style="max-width:580px;max-height:85vh;overflow-y:auto;">
+    <h2><i class="fa-solid fa-circle-question" style="color:#818cf8;margin-right:8px;"></i>Companion Integration Setup</h2>
+
+    <p style="color:#94a3b8;font-size:0.85rem;margin:12px 0 6px;">Bitfocus Companion can push live variable values (stream state, duration, etc.) to this dashboard automatically.</p>
+
+    <h3 style="color:#60a5fa;font-size:0.9rem;margin:16px 0 8px;border-bottom:1px solid rgba(96,165,250,0.2);padding-bottom:6px;">Step 1 — Enable Companion HTTP API</h3>
+    <p style="color:#94a3b8;font-size:0.83rem;margin:0 0 8px;">In Companion: <strong style="color:#e2e8f0;">Settings → Surfaces</strong> → enable <strong style="color:#e2e8f0;">Enable HTTP API</strong> (port 8000).</p>
+
+    <h3 style="color:#60a5fa;font-size:0.9rem;margin:16px 0 8px;border-bottom:1px solid rgba(96,165,250,0.2);padding-bottom:6px;">Step 2 — Create a Trigger</h3>
+    <ol style="color:#94a3b8;font-size:0.83rem;padding-left:1.3em;line-height:1.8;">
+      <li>Go to <strong style="color:#e2e8f0;">Triggers</strong> → click <strong style="color:#e2e8f0;">Add Trigger</strong></li>
+      <li>Set type to <strong style="color:#e2e8f0;">Time Interval</strong> → every <strong style="color:#e2e8f0;">10 seconds</strong></li>
+      <li>Under Actions → <strong style="color:#e2e8f0;">Add Action</strong> → <strong style="color:#e2e8f0;">HTTP Request → Send a HTTP request</strong></li>
+    </ol>
+
+    <h3 style="color:#60a5fa;font-size:0.9rem;margin:16px 0 8px;border-bottom:1px solid rgba(96,165,250,0.2);padding-bottom:6px;">Step 3 — Configure the HTTP Action</h3>
+    <table style="width:100%;font-size:0.82rem;border-collapse:collapse;margin-bottom:8px;">
+      <tr><td style="color:#64748b;padding:4px 8px 4px 0;white-space:nowrap;vertical-align:top;">Method</td><td style="color:#e2e8f0;padding:4px 0;"><code style="background:rgba(255,255,255,0.07);padding:2px 6px;border-radius:4px;">POST</code></td></tr>
+      <tr><td style="color:#64748b;padding:4px 8px 4px 0;white-space:nowrap;vertical-align:top;">URL</td><td style="color:#e2e8f0;padding:4px 0;"><code style="background:rgba(255,255,255,0.07);padding:2px 6px;border-radius:4px;">http://192.168.0.121:8080/companion</code></td></tr>
+      <tr><td style="color:#64748b;padding:4px 8px 4px 0;white-space:nowrap;vertical-align:top;">Content-Type</td><td style="color:#e2e8f0;padding:4px 0;"><code style="background:rgba(255,255,255,0.07);padding:2px 6px;border-radius:4px;">application/json</code></td></tr>
+      <tr><td style="color:#64748b;padding:4px 8px 4px 0;white-space:nowrap;vertical-align:top;">JSON Stringify</td><td style="color:#f87171;padding:4px 0;font-weight:600;">UNCHECKED</td></tr>
+    </table>
+
+    <h3 style="color:#60a5fa;font-size:0.9rem;margin:16px 0 8px;border-bottom:1px solid rgba(96,165,250,0.2);padding-bottom:6px;">Step 4 — Body (example for Web Presenter)</h3>
+    <pre style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:10px;font-size:0.78rem;color:#a5f3fc;white-space:pre-wrap;word-break:break-all;min-height:120px;">{
+  "stream_state": "$(WebPresenter:stream_state)",
+  "stream_duration": "$(WebPresenter:stream_duration)",
+  "platform": "$(WebPresenter:platform)"
+}</pre>
+    <p style="color:#64748b;font-size:0.78rem;margin:6px 0 0;">Replace <code style="color:#a5f3fc;">WebPresenter</code> with your Companion connection label. Add or remove lines for each variable you want.</p>
+
+    <h3 style="color:#60a5fa;font-size:0.9rem;margin:16px 0 8px;border-bottom:1px solid rgba(96,165,250,0.2);padding-bottom:6px;">Step 5 — Add Variables to an Equipment Card</h3>
+    <ol style="color:#94a3b8;font-size:0.83rem;padding-left:1.3em;line-height:1.8;">
+      <li>Enable <strong style="color:#e2e8f0;">Edit mode</strong> on the dashboard</li>
+      <li>Click the <strong style="color:#e2e8f0;">edit (pencil) button</strong> on the equipment card</li>
+      <li>Scroll to <strong style="color:#e2e8f0;">Companion Integration</strong> section</li>
+      <li>Set <strong style="color:#e2e8f0;">Connection Label</strong> to match your Companion connection (e.g. <code style="color:#a5f3fc;">WebPresenter</code>)</li>
+      <li>Add variables one per line in this format:</li>
+    </ol>
+    <pre style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:10px;font-size:0.78rem;color:#a5f3fc;white-space:pre-wrap;word-break:break-all;min-height:100px;">stream_state | Streaming State | badge
+stream_duration | Duration | text
+platform | Platform | text</pre>
+    <p style="color:#64748b;font-size:0.78rem;margin:6px 0 0;">Format: <code style="color:#a5f3fc;">key | Label | badge</code> or <code style="color:#a5f3fc;">key | Label | text</code>. The key must match what's in the POST body above.</p>
+
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="btn-cancel" onclick="closeModal('help-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- Firebase compat SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script src="firebase.config.js"></script>
 <script>
+  const SERVER = window.location.origin;
+
   // ── Firebase init ────────────────────────────────────────────────────────
   firebase.initializeApp(FIREBASE_CONFIG);
   const db = firebase.firestore();
@@ -489,6 +652,16 @@
   let searchQuery = '';
   let editMode = false;
   let activeCardEl = null;
+  let viewMode = localStorage.getItem('swp-view') || 'cards';
+
+  function setView(v) {
+    viewMode = v;
+    localStorage.setItem('swp-view', v);
+    document.getElementById('view-cards').classList.toggle('active', v === 'cards');
+    document.getElementById('view-list').classList.toggle('active', v === 'list');
+    document.getElementById('cards-grid').classList.toggle('list-view', v === 'list');
+  }
+  setView(viewMode);
   let currentUrl = '';
   let pendingDeleteId = null;
   const onlineStatus = {};
@@ -535,8 +708,18 @@
       return 0;
     });
 
-    document.getElementById('device-count').textContent =
-      filtered.length + ' device' + (filtered.length !== 1 ? 's' : '');
+    const monitored = filtered.filter(d => d.monitor && d.ip && d.category !== 'h2r');
+    const onlineCount  = monitored.filter(d => onlineStatus[d.id] === true).length;
+    const offlineCount = monitored.filter(d => onlineStatus[d.id] === false).length;
+    document.getElementById('device-count').innerHTML =
+      `<span style="color:#94a3b8;">${filtered.length} device${filtered.length !== 1 ? 's' : ''}</span>` +
+      (monitored.length ? `
+        <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);color:#22c55e;border-radius:12px;padding:2px 10px;font-size:0.75rem;font-weight:700;">
+          <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;"></span>${onlineCount} online
+        </span>
+        <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:12px;padding:2px 10px;font-size:0.75rem;font-weight:700;">
+          <span style="width:7px;height:7px;border-radius:50%;background:#f87171;display:inline-block;"></span>${offlineCount} offline
+        </span>` : '');
 
     if (!filtered.length) {
       grid.innerHTML = '';
@@ -548,9 +731,9 @@
     grid.innerHTML = filtered.map(d => {
       const hasIp = !!d.ip;
       const url = hasIp ? 'http://' + d.ip : '';
-      const offlineCls = d.category === 'h2r' ? '' : onlineStatus[d.id] === false ? ' offline' : onlineStatus[d.id] === true ? ' online' : '';
+      const offlineCls = (!d.monitor || d.category === 'h2r') ? '' : onlineStatus[d.id] === false ? ' offline' : onlineStatus[d.id] === true ? ' online' : '';
       return `
-      <div class="eq-card cat-${d.category}${offlineCls}" id="card-${d.id}">
+      <div class="eq-card cat-${d.category}${offlineCls}" id="card-${d.id}" ondblclick="openEditModal('${d.id}')" style="cursor:pointer;" title="Double-click to edit">
         <div class="card-edit-actions">
           <button class="card-edit-btn edit" onclick="openEditModal('${d.id}')" title="Edit"><i class="fa-solid fa-pen"></i></button>
           <button class="card-edit-btn delete" onclick="openDeleteModal('${d.id}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
@@ -563,34 +746,49 @@
           <span class="cat-badge">${catLabels[d.category]||d.category}</span>
         </div>
         <div class="card-ip">
-          ${!(d.appKey||d.appPath) ? `<span class="status-dot ${onlineStatus[d.id] === true ? 'online' : onlineStatus[d.id] === false ? 'offline' : ''}" id="status-${d.id}" title="Checking..."></span>` : ''}
           ${hasIp ? esc(d.ip) : (d.appKey||d.appPath) ? '<span class="no-ip">Local application</span>' : '<span class="no-ip">No IP assigned</span>'}
         </div>
+        ${d.monitor && hasIp ? `<span class="status-badge ${onlineStatus[d.id] === true ? 'online' : onlineStatus[d.id] === false ? 'offline' : ''}" id="status-${d.id}">${onlineStatus[d.id] === true ? 'Online' : onlineStatus[d.id] === false ? 'Offline' : 'Checking...'}</span>` : ''}
         ${(d.user || d.pass) ? `
         <div class="card-meta">
           ${d.user ? `<span><i class="fa-solid fa-user" style="width:12px;"></i>${esc(d.user)}</span>` : ''}
           ${d.pass ? `<span><i class="fa-solid fa-key" style="width:12px;"></i>${esc(d.pass)}</span>` : ''}
         </div>` : ''}
         ${d.notes ? `<div class="card-notes">${esc(d.notes)}</div>` : ''}
+        ${(d.companionVars||[]).map(v => {
+          const raw = companionState[v.key] ?? '';
+          const val = v.key === 'stream_bitrate' && raw !== '' ? fmtMB(raw) : raw;
+          if (v.display === 'badge') {
+            const isStreaming = raw === 'Streaming';
+            const isConnecting = raw === 'Connecting';
+            const cls = isStreaming ? 'streaming' : isConnecting ? 'connecting' : 'idle';
+            return `<span class="companion-badge ${cls}" id="cbadge-${d.id}-${v.key}">${val || v.label}</span>`;
+          }
+          return `<div class="companion-text" id="cbadge-${d.id}-${v.key}" ${val ? '' : 'style="display:none"'}><span class="companion-text-label">${esc(v.label)}:</span> <span class="companion-text-val">${esc(val)}</span></div>`;
+        }).join('')}
+        ${(d.appKey||d.appPath||d.browserEnabled) ? `
         <div class="card-actions">
           ${(d.appKey||d.appPath) ? `
           <button class="btn-launch" id="launch-${d.id}" onclick="launchApp('${d.id}')">
             <i class="fa-solid fa-rocket"></i> Launch
           </button>` : `
-          <button class="btn-frame" onclick="openFrame('${d.id}')" ${!hasIp ? 'disabled title="No IP assigned"' : ''}>
-            <i class="fa-solid fa-table-columns"></i> Browse
-          </button>
-          <button class="btn-tab" onclick="openTab('${url}')" ${!hasIp ? 'disabled title="No IP assigned"' : ''}>
-            <i class="fa-solid fa-arrow-up-right-from-square"></i> New Tab
+          <button class="btn-frame" onclick="openTab('${url}')" ${!hasIp ? 'disabled title="No IP assigned"' : ''}>
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Browse
           </button>
           <button class="btn-popout" onclick="popOut('${url}')" ${!hasIp ? 'disabled title="No IP assigned"' : ''} title="Open in app window (no restrictions)">
             <i class="fa-solid fa-window-restore"></i>
           </button>`}
-        </div>
+        </div>` : ''}
       </div>`;
     }).join('');
 
     if (editMode) document.getElementById('cards-grid').classList.add('edit-mode');
+    updateCompanionBadges();
+  }
+
+  function fmtMB(raw) {
+    const n = parseFloat(raw);
+    return isNaN(n) ? String(raw) : (n / 1000000).toFixed(2) + ' MB';
   }
 
   function esc(s) {
@@ -624,6 +822,10 @@
     document.getElementById('f-user').value = '';
     document.getElementById('f-pass').value = '';
     document.getElementById('f-notes').value = '';
+    document.getElementById('f-monitor').checked = false;
+    document.getElementById('f-browser-enabled').checked = false;
+    document.getElementById('f-companion-label').value = '';
+    document.getElementById('f-companion-vars').value = '';
     document.getElementById('modal-error').style.display = 'none';
     document.getElementById('edit-modal').classList.add('open');
   }
@@ -642,6 +844,10 @@
     document.getElementById('f-user').value = d.user || '';
     document.getElementById('f-pass').value = d.pass || '';
     document.getElementById('f-notes').value = d.notes || '';
+    document.getElementById('f-monitor').checked = !!d.monitor;
+    document.getElementById('f-browser-enabled').checked = !!d.browserEnabled;
+    document.getElementById('f-companion-label').value = d.companionLabel || '';
+    document.getElementById('f-companion-vars').value = (d.companionVars || []).map(v => `${v.key} | ${v.label} | ${v.display}`).join('\n');
     document.getElementById('modal-error').style.display = 'none';
     document.getElementById('edit-modal').classList.add('open');
   }
@@ -660,6 +866,14 @@
       user:     document.getElementById('f-user').value.trim(),
       pass:     document.getElementById('f-pass').value.trim(),
       notes:    document.getElementById('f-notes').value.trim(),
+      monitor:        document.getElementById('f-monitor').checked,
+      browserEnabled: document.getElementById('f-browser-enabled').checked,
+      companionLabel: document.getElementById('f-companion-label').value.trim(),
+      companionVars: document.getElementById('f-companion-vars').value.trim()
+        .split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+          const [key, label, display] = l.split('|').map(s => s.trim());
+          return { key: key||'', label: label||key||'', display: display||'text' };
+        }),
     };
 
     const btn = document.getElementById('btn-save');
@@ -709,6 +923,10 @@
     }
   }
 
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+  }
+
   function closeModal(id) {
     document.getElementById(id).classList.remove('open');
   }
@@ -719,9 +937,9 @@
 
   // ── Ping ─────────────────────────────────────────────────────────────────
   function pingDevice(d) {
-    if (!d.ip || d.appKey) return;
-    const pingIp = d.ip.split(':')[0].split('/')[0]; // extract bare IP from "host:port/path"
-    fetch(`http://localhost:8080/ping?ip=${encodeURIComponent(pingIp)}`)
+    if (!d.ip || d.appKey || !d.monitor) return;
+    const pingIp = d.ip.split(':')[0].split('/')[0];
+    fetch(`${SERVER}/ping?ip=${encodeURIComponent(pingIp)}`)
       .then(r => r.json())
       .then(data => setStatus(d.id, data.online))
       .catch(() => setStatus(d.id, false));
@@ -729,13 +947,68 @@
 
   function setStatus(id, online) {
     onlineStatus[id] = online;
-    const dot = document.getElementById('status-' + id);
-    if (dot) { dot.className = 'status-dot ' + (online ? 'online' : 'offline'); dot.title = online ? 'Online' : 'Offline'; }
+    const badge = document.getElementById('status-' + id);
+    if (badge) {
+      badge.className = 'status-badge ' + (online ? 'online' : 'offline');
+      badge.textContent = online ? 'Online' : 'Offline';
+    }
     const card = document.getElementById('card-' + id);
     if (card) { card.classList.toggle('online', online); card.classList.toggle('offline', !online); }
+    updateStatusCounts();
+  }
+
+  function updateStatusCounts() {
+    const monitored = EQUIPMENT.filter(d => d.monitor && d.ip && d.category !== 'h2r');
+    const onlineCount  = monitored.filter(d => onlineStatus[d.id] === true).length;
+    const offlineCount = monitored.filter(d => onlineStatus[d.id] === false).length;
+    const el = document.getElementById('device-count');
+    if (!el) return;
+    el.innerHTML =
+      `<span style="color:#94a3b8;">${EQUIPMENT.length} device${EQUIPMENT.length !== 1 ? 's' : ''}</span>` +
+      (monitored.length ? `
+        <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);color:#22c55e;border-radius:12px;padding:2px 10px;font-size:0.75rem;font-weight:700;">
+          <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;"></span>${onlineCount} online
+        </span>
+        <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:12px;padding:2px 10px;font-size:0.75rem;font-weight:700;">
+          <span style="width:7px;height:7px;border-radius:50%;background:#f87171;display:inline-block;"></span>${offlineCount} offline
+        </span>` : '');
   }
 
   function pingAll() { EQUIPMENT.forEach(d => pingDevice(d)); }
+
+  // ── Companion status polling ──────────────────────────────────────────────
+  let companionState = {};
+  function pollCompanion() {
+    fetch(`${SERVER}/companion`)
+      .then(r => r.json())
+      .then(data => {
+        companionState = data;
+        updateCompanionBadges();
+      })
+      .catch(() => {});
+  }
+  function updateCompanionBadges() {
+    EQUIPMENT.forEach(d => {
+      (d.companionVars || []).forEach(v => {
+        const el = document.getElementById(`cbadge-${d.id}-${v.key}`);
+        if (!el) return;
+        const raw = companionState[v.key] ?? '';
+        const val = v.key === 'stream_bitrate' && raw !== '' ? fmtMB(raw) : raw;
+        if (v.display === 'badge') {
+          const isStreaming = raw === 'Streaming';
+          const isConnecting = raw === 'Connecting';
+          el.className = 'companion-badge ' + (isStreaming ? 'streaming' : isConnecting ? 'connecting' : 'idle');
+          el.textContent = val || v.label;
+        } else {
+          const valEl = el.querySelector('.companion-text-val');
+          if (valEl) valEl.textContent = val;
+          el.style.display = val ? '' : 'none';
+        }
+      });
+    });
+  }
+  pollCompanion();
+  setInterval(pollCompanion, 10000);
 
   // ── Frame panel ──────────────────────────────────────────────────────────
   function openFrame(id) {
@@ -746,7 +1019,7 @@
     document.getElementById('frame-ip').textContent = d.ip;
     document.getElementById('blocked-link').href = currentUrl;
     document.getElementById('frame-blocked').style.display = 'none';
-    document.getElementById('device-frame').src = 'http://localhost:8080/proxy?url=' + encodeURIComponent(currentUrl);
+    document.getElementById('device-frame').src = `${SERVER}/proxy?url=` + encodeURIComponent(currentUrl);
     document.getElementById('frame-panel').style.display = 'block';
     if (activeCardEl) activeCardEl.classList.remove('active-frame');
     activeCardEl = document.getElementById('card-' + id);
@@ -761,8 +1034,15 @@
   function openTab(url) { if (url) window.open(url, '_blank', 'noopener'); }
   function popOut(url) {
     if (!url) return;
-    fetch('http://localhost:8080/launch-browser?url=' + encodeURIComponent(url))
-      .catch(() => window.open(url, '_blank', 'noopener'));
+    fetch(`${SERVER}/launch-browser?url=` + encodeURIComponent(url))
+      .then(() => {
+        // Ask server to focus the window it opened
+        fetch(`${SERVER}/focus-browser`).catch(() => {});
+      })
+      .catch(() => {
+        const w = window.open(url, '_blank', 'width=1280,height=720');
+        if (w) w.focus();
+      });
   }
   function openNewTab() { if (currentUrl) openTab(currentUrl); }
   function closeFrame() {
@@ -787,8 +1067,8 @@
     if (btn) { btn.classList.add('launching'); btn.disabled = true; }
 
     const url = d.appPath
-      ? `http://localhost:8080/launch-path?path=${encodeURIComponent(d.appPath)}`
-      : `http://localhost:8080/launch?app=${encodeURIComponent(d.appKey)}`;
+      ? `${SERVER}/launch-path?path=${encodeURIComponent(d.appPath)}`
+      : `${SERVER}/launch?app=${encodeURIComponent(d.appKey)}`;
 
     fetch(url)
       .then(r => r.json())

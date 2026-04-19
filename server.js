@@ -7,16 +7,49 @@ const { URL } = require('url');
 
 const localConfig = (() => {
   try { return require('./local.config.js'); }
-  catch { console.warn('Warning: local.config.js not found — copy local.config.example.js to get started.'); return { ffmpeg: '', brave: '', apps: {} }; }
+  catch { console.warn('Warning: local.config.js not found — copy local.config.example.js to get started.'); return { ffmpeg: '', brave: '', apps: {}, companion: null }; }
 })();
 
 const FFMPEG      = localConfig.ffmpeg;
 const BRAVE       = localConfig.brave;
 const APP_WHITELIST = localConfig.apps || {};
 const BRAVE_PROFILE = path.join(__dirname, 'brave-app-profile');
+const COMPANION_CFG = localConfig.companion || null; // { host, port } for button polling
 
 let ffmpegProcess = null;
 const FRAME_PATH = path.join(__dirname, 'capture-frame.jpg');
+
+// ── Companion push store ──────────────────────────────────────────────────────
+let companionState = {}; // key/value pairs pushed from Companion via POST /companion
+
+// ── Companion button polling (HTTP API — buttons only, not connection variables) ──
+async function pollCompanionButtons() {
+  if (!COMPANION_CFG || !COMPANION_CFG.buttons) return;
+  for (const item of COMPANION_CFG.buttons) {
+    try {
+      await new Promise((resolve) => {
+        http.get({ hostname: COMPANION_CFG.host, port: COMPANION_CFG.port || 8000,
+          path: `/style/bank/${item.page}/${item.bank}`, timeout: 4000 }, (r) => {
+          const chunks = [];
+          r.on('data', c => chunks.push(c));
+          r.on('end', () => {
+            try {
+              const data = JSON.parse(Buffer.concat(chunks).toString());
+              if (data && data.text !== undefined) companionState[item.key] = data.text;
+            } catch {}
+            resolve();
+          });
+        }).on('error', resolve).on('timeout', resolve);
+      });
+    } catch {}
+  }
+}
+
+if (COMPANION_CFG && COMPANION_CFG.buttons) {
+  pollCompanionButtons();
+  setInterval(pollCompanionButtons, 10000);
+  console.log(`  Companion button polling: ${COMPANION_CFG.host}:${COMPANION_CFG.port || 8000}`);
+}
 
 const PORT = 8080;
 const ROOT = __dirname;
@@ -60,7 +93,7 @@ const server = http.createServer(async (req, res) => {
   // ── Ping API ──────────────────────────────────────────────────────────────
   if (url.pathname === '/ping') {
     const ip = url.searchParams.get('ip') || '';
-    if (!/^192\.168\.\d{1,3}\.\d{1,3}$/.test(ip)) {
+    if (!/^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)\d{1,3}\.\d{1,3}$/.test(ip)) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ error: 'invalid ip' }));
     }
@@ -162,6 +195,54 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ── Companion: debug — raw fetch from Companion HTTP API ─────────────────
+  if (url.pathname === '/companion/debug') {
+    if (!COMPANION_CFG) {
+      res.writeHead(503, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'No companion config' }));
+    }
+    const apiPath = url.searchParams.get('path') || '/style/bank/1/1';
+    const host = COMPANION_CFG.host;
+    const port = COMPANION_CFG.port || 8000;
+    const req2 = http.get({ hostname: host, port, path: apiPath, timeout: 4000 }, (r) => {
+      const chunks = [];
+      r.on('data', c => chunks.push(c));
+      r.on('end', () => {
+        const body = Buffer.concat(chunks).toString('utf8');
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end(`STATUS: ${r.statusCode}\n\nBODY:\n${body}`);
+      });
+    });
+    req2.on('error', e => { res.writeHead(502); res.end('Error: ' + e.message); });
+    req2.on('timeout', () => { req2.destroy(); res.writeHead(504); res.end('Timeout'); });
+    return;
+  }
+
+  // ── Companion: receive pushed values ─────────────────────────────────────
+  if (url.pathname === '/companion' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        Object.assign(companionState, data);
+        console.log('Companion push:', data);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
+    });
+    return;
+  }
+
+  // ── Companion: get current state ─────────────────────────────────────────
+  if (url.pathname === '/companion') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify(companionState));
+  }
+
   // ── Launch Brave app window (no CORS/iframe restrictions) ────────────────
   if (url.pathname === '/launch-browser') {
     const target = url.searchParams.get('url') || '';
@@ -182,8 +263,18 @@ const server = http.createServer(async (req, res) => {
     }
     const cmd = `"${BRAVE}" --disable-web-security --user-data-dir="${BRAVE_PROFILE}" --app="${target}"`;
     exec(`start "" ${cmd}`, (err) => { if (err) console.error('Brave launch error:', err.message); });
+    // Give Brave ~1.5s to open then bring it to front
+    setTimeout(() => {
+      exec(`powershell -NoProfile -ExecutionPolicy Bypass -File "${path.join(__dirname, 'focus-brave.ps1')}"`, (err) => { if (err) console.error('Focus error:', err.message); });
+    }, 1500);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ launched: true }));
+  }
+
+  if (url.pathname === '/focus-browser') {
+    exec(`powershell -NoProfile -ExecutionPolicy Bypass -File "${path.join(__dirname, 'focus-brave.ps1')}"`, () => {});
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ focused: true }));
   }
 
   // ── Proxy: fetch remote page, strip X-Frame-Options ─────────────────────
@@ -276,8 +367,8 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`\n  Streamwave Equipment Dashboard`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`\n  GearOps Dashboard`);
   console.log(`  Running at http://localhost:${PORT}\n`);
   console.log(`  Whitelisted apps:`);
   Object.keys(APP_WHITELIST).forEach(k => console.log(`    • ${k}`));

@@ -3,14 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Capture — Streamwave</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="GearOps" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="Gearops-trans2.png" />
+  <title>Capture — GearOps</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="firebase.config.js"></script>
   <style>
     * { box-sizing: border-box; }
     body { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); min-height: 100vh; color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; }
 
-    .top-nav { background: rgba(15,23,42,0.95); border-bottom: 1px solid rgba(96,165,250,0.2); padding: 14px 20px; display: flex; align-items: center; gap: 12px; }
+    .top-nav { background: rgba(15,23,42,0.95); border-bottom: 1px solid rgba(96,165,250,0.2); padding: 0 12px; display: flex; align-items: center; gap: 12px; }
     .top-nav h1 { font-size: 1.25rem; font-weight: 700; color: #60a5fa; margin: 0; }
     .nav-back { background: rgba(96,165,250,0.15); border: 1px solid rgba(96,165,250,0.3); color: #60a5fa; border-radius: 8px; padding: 6px 14px; font-size: 0.8rem; font-weight: 600; cursor: pointer; text-decoration: none; display: flex; align-items: center; gap: 6px; }
     .nav-back:hover { background: rgba(96,165,250,0.25); color: #60a5fa; }
@@ -20,7 +28,7 @@
     /* Split layout */
     .split-layout {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 2fr 1fr 220px;
       gap: 16px;
       height: calc(100vh - 130px);
     }
@@ -71,37 +79,118 @@
     .yt-blocked p { color: #94a3b8; font-size: 0.85rem; margin: 0; }
     .yt-blocked a { color: #ef4444; font-weight: 600; text-decoration: none; }
 
+    /* Equipment status panel */
+    .eq-status-list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; flex: 1; }
+    .eq-status-item { display: flex; align-items: center; gap: 8px; background: rgba(15,23,42,0.5); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 7px 10px; font-size: 0.78rem; transition: border-color 0.3s, background 0.3s; }
+    .eq-status-item.offline { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.3); animation: blink-offline 1.2s infinite; }
+    .eq-status-item.offline.no-blink { animation: none; border-color: rgba(239,68,68,0.3); }
+    .eq-status-item.offline.no-blink .eq-dot { animation: none; }
+    @keyframes blink-offline { 0%,100% { border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.08); } 50% { border-color: rgba(239,68,68,0.7); background: rgba(239,68,68,0.18); } }
+    .eq-status-item .eq-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .eq-status-item .eq-dot.online  { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.6); }
+    .eq-status-item .eq-dot.offline { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.6); animation: blink-dot 1.2s infinite; }
+    @keyframes blink-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .eq-status-item .eq-dot.unknown { background: #475569; }
+    .eq-status-item .eq-name { color: #e2e8f0; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .eq-status-item.offline .eq-name { color: #f87171; }
+    .eq-status-item .eq-ip { font-family: 'Courier New', monospace; font-size: 0.72rem; color: #475569; white-space: nowrap; }
+
+    /* Capture fullscreen */
+    #capture-panel.fullscreen {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: #000;
+      padding: 8px;
+      border-radius: 0;
+    }
+    #capture-panel.fullscreen .preview-wrap { border-radius: 0; }
+
     @media (max-width: 900px) {
       .split-layout { grid-template-columns: 1fr; height: auto; }
       .split-panel { height: 50vw; min-height: 280px; }
     }
 
     /* Controls */
-    .controls-card { background: rgba(30,41,59,0.8); border: 1px solid rgba(96,165,250,0.15); border-radius: 14px; padding: 20px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; margin-bottom: 20px; }
-    .ctrl-group { display: flex; flex-direction: column; gap: 5px; min-width: 220px; flex: 1; }
-    .ctrl-group label { font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+    .controls-card { background: rgba(30,41,59,0.8); border: 1px solid rgba(96,165,250,0.15); border-radius: 10px; padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 12px; }
+
+    /* Equipment card styles (mirrored from main page) */
+    .eq-card { background: rgba(30,41,59,0.8); border: 1px solid rgba(96,165,250,0.15); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; transition: transform 0.15s, box-shadow 0.15s; position: relative; margin-bottom: 8px; }
+    .eq-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .card-header-row { display: flex; align-items: flex-start; gap: 10px; }
+    .card-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
+    .cat-computing  .card-icon { background: rgba(96,165,250,0.15);  color: #60a5fa; }
+    .cat-network    .card-icon { background: rgba(245,158,11,0.15);  color: #f59e0b; }
+    .cat-cameras    .card-icon { background: rgba(52,211,153,0.15);  color: #34d399; }
+    .cat-encoders   .card-icon { background: rgba(244,114,182,0.15); color: #f472b6; }
+    .cat-atems      .card-icon { background: rgba(167,139,250,0.15); color: #a78bfa; }
+    .cat-hyperdecks .card-icon { background: rgba(251,146,60,0.15);  color: #fb923c; }
+    .cat-routing    .card-icon { background: rgba(56,189,248,0.15);  color: #38bdf8; }
+    .cat-software   .card-icon { background: rgba(74,222,128,0.15);  color: #4ade80; }
+    .eq-card.cat-computing  { background: rgba(96,165,250,0.08);  border-color: rgba(96,165,250,0.2); }
+    .eq-card.cat-network    { background: rgba(245,158,11,0.08);  border-color: rgba(245,158,11,0.2); }
+    .eq-card.cat-cameras    { background: rgba(52,211,153,0.08);  border-color: rgba(52,211,153,0.2); }
+    .eq-card.cat-encoders   { background: rgba(244,114,182,0.08); border-color: rgba(244,114,182,0.2); }
+    .eq-card.cat-atems      { background: rgba(167,139,250,0.08); border-color: rgba(167,139,250,0.2); }
+    .eq-card.cat-hyperdecks { background: rgba(251,146,60,0.08);  border-color: rgba(251,146,60,0.2); }
+    .eq-card.cat-routing    { background: rgba(56,189,248,0.08);  border-color: rgba(56,189,248,0.2); }
+    .eq-card.cat-software   { background: rgba(74,222,128,0.08);  border-color: rgba(74,222,128,0.2); }
+    .card-title { font-size: 0.95rem; font-weight: 600; color: #f1f5f9; line-height: 1.2; }
+    .cat-badge { font-size: 0.68rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-left: auto; flex-shrink: 0; }
+    .cat-computing  .cat-badge { background: rgba(96,165,250,0.2);  color: #60a5fa; }
+    .cat-network    .cat-badge { background: rgba(245,158,11,0.2);  color: #f59e0b; }
+    .cat-cameras    .cat-badge { background: rgba(52,211,153,0.2);  color: #34d399; }
+    .cat-encoders   .cat-badge { background: rgba(244,114,182,0.2); color: #f472b6; }
+    .cat-atems      .cat-badge { background: rgba(167,139,250,0.2); color: #a78bfa; }
+    .cat-hyperdecks .cat-badge { background: rgba(251,146,60,0.2);  color: #fb923c; }
+    .cat-routing    .cat-badge { background: rgba(56,189,248,0.2);  color: #38bdf8; }
+    .cat-software   .cat-badge { background: rgba(74,222,128,0.2);  color: #4ade80; }
+    .card-ip { font-family: 'Courier New', monospace; font-size: 0.82rem; color: #fff; display: flex; align-items: center; gap: 6px; }
+    .card-ip .no-ip { color: #475569; font-style: italic; font-family: inherit; }
+    .card-meta { font-size: 0.76rem; color: #64748b; display: flex; flex-direction: column; gap: 2px; }
+    .card-meta span { display: flex; align-items: center; gap: 5px; }
+    .card-notes { font-size: 0.75rem; color: #475569; font-style: italic; }
+    .companion-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; border: 1px solid; width: fit-content; transition: all 0.3s; }
+    .companion-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .companion-badge.streaming  { background: rgba(255,32,32,0.15);  color: #ff4444; border-color: rgba(255,32,32,0.3);  box-shadow: 0 0 8px rgba(255,32,32,0.3); animation: pulse-badge 2s infinite; }
+    .companion-badge.connecting { background: rgba(251,191,36,0.15); color: #fbbf24; border-color: rgba(251,191,36,0.3); animation: pulse-badge 1s infinite; }
+    .companion-badge.idle       { background: rgba(34,197,94,0.15);  color: #22c55e; border-color: rgba(34,197,94,0.3);  box-shadow: 0 0 8px rgba(34,197,94,0.2); }
+    @keyframes pulse-badge { 0%,100% { box-shadow: 0 0 6px rgba(34,197,94,0.3); } 50% { box-shadow: 0 0 14px rgba(34,197,94,0.7); } }
+    .companion-text { font-size: 0.78rem; color: #94a3b8; }
+    .companion-text-label { color: #64748b; font-size: 0.72rem; }
+    .card-actions { display: flex; gap: 8px; margin-top: 4px; }
+    .btn-frame, .btn-tab, .btn-popout { flex: 1; border: none; border-radius: 8px; padding: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: opacity 0.15s, transform 0.1s; min-height: 36px; }
+    .btn-frame  { background: rgba(96,165,250,0.2); color: #60a5fa; }
+    .btn-frame:hover  { background: rgba(96,165,250,0.3); }
+    .btn-tab    { background: rgba(100,116,139,0.2); color: #94a3b8; }
+    .btn-tab:hover    { background: rgba(100,116,139,0.3); }
+    .btn-popout { flex: 0 0 36px; background: rgba(167,139,250,0.2); color: #a78bfa; }
+    .btn-popout:hover { background: rgba(167,139,250,0.3); }
+    .btn-frame:disabled, .btn-tab:disabled, .btn-popout:disabled { opacity: 0.4; cursor: not-allowed; }
+    .ctrl-group { display: flex; flex-direction: column; gap: 3px; min-width: 160px; flex: 1; }
+    .ctrl-group label { font-size: 0.7rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
     .ctrl-group select {
       background: rgba(15,23,42,0.7);
       border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 8px;
+      border-radius: 6px;
       color: #e2e8f0;
-      padding: 9px 12px;
-      font-size: 0.88rem;
+      padding: 5px 10px;
+      font-size: 0.83rem;
       outline: none;
       cursor: pointer;
     }
     .ctrl-group select:focus { border-color: rgba(96,165,250,0.5); }
     .ctrl-group select option { background: #1e293b; }
 
-    .btn-scan { background: rgba(96,165,250,0.15); border: 1px solid rgba(96,165,250,0.3); color: #60a5fa; border-radius: 8px; padding: 9px 18px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    .btn-scan { background: rgba(96,165,250,0.15); border: 1px solid rgba(96,165,250,0.3); color: #60a5fa; border-radius: 6px; padding: 5px 12px; font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap; }
     .btn-scan:hover { background: rgba(96,165,250,0.25); }
     .btn-scan:disabled { opacity: 0.5; cursor: wait; }
 
-    .btn-start { background: #22c55e; border: none; color: #0f172a; border-radius: 8px; padding: 9px 24px; font-size: 0.88rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 7px; }
+    .btn-start { background: #22c55e; border: none; color: #0f172a; border-radius: 6px; padding: 5px 16px; font-size: 0.83rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; }
     .btn-start:hover { background: #4ade80; }
     .btn-start:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .btn-stop { background: #ef4444; border: none; color: #fff; border-radius: 8px; padding: 9px 24px; font-size: 0.88rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 7px; display: none; }
+    .btn-stop { background: #ef4444; border: none; color: #fff; border-radius: 6px; padding: 5px 16px; font-size: 0.83rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px; display: none; }
     .btn-stop:hover { background: #f87171; }
 
     /* Preview */
@@ -158,9 +247,10 @@
 <body>
 
 <nav class="top-nav">
-  <i class="fa-solid fa-tower-broadcast" style="color:#60a5fa;font-size:1.2rem;"></i>
-  <h1>Capture Preview</h1>
-  <a class="nav-back" href="http://localhost:8080"><i class="fa-solid fa-arrow-left"></i> Equipment</a>
+  <img src="control-room.svg" alt="" style="height:28px;width:auto;filter:invert(65%) sepia(80%) saturate(600%) hue-rotate(340deg) brightness(1.1);" />
+  <h1>Control Room</h1>
+  <div id="clock" style="font-family:'Courier New',monospace;font-size:2.4rem;font-weight:700;color:#fb923c;letter-spacing:0.08em;text-shadow:0 0 18px rgba(251,146,60,0.6),0 0 4px rgba(251,146,60,0.4);margin-left:auto;margin-right:16px;"></div>
+  <a class="nav-back" id="nav-back-link" href="/"><i class="fa-solid fa-arrow-left"></i> Equipment</a>
 </nav>
 
 <div class="page">
@@ -195,8 +285,13 @@
   <div class="split-layout">
 
     <!-- Left: Capture / Multiview -->
-    <div class="split-panel">
-      <div class="panel-label"><i class="fa-solid fa-camera" style="color:#22c55e;"></i> Multiview / Capture</div>
+    <div class="split-panel" id="capture-panel">
+      <div class="panel-label">
+        <i class="fa-solid fa-camera" style="color:#22c55e;"></i> Multiview / Capture
+        <button id="btn-fullscreen" onclick="toggleCaptureFullscreen()" title="Fullscreen" style="margin-left:auto;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#94a3b8;border-radius:6px;padding:3px 10px;font-size:0.75rem;cursor:pointer;display:flex;align-items:center;gap:5px;">
+          <i class="fa-solid fa-expand"></i> Fullscreen
+        </button>
+      </div>
       <div class="preview-wrap" id="preview-wrap" style="flex:1;">
         <div class="preview-placeholder" id="placeholder">
           <i class="fa-solid fa-camera-slash"></i>
@@ -212,6 +307,9 @@
     <!-- Right: Embedded browser -->
     <div class="split-panel">
       <div class="panel-label"><i class="fa-solid fa-globe" style="color:#60a5fa;"></i> Browser</div>
+
+      <div id="wp-card-wrap"></div>
+
       <div style="display:flex;gap:6px;align-items:center;">
         <input id="browser-url" type="text" value="https://www.youtube.com/embed/8EMnwAVznvE?autoplay=1&mute=1&rel=0&modestbranding=1"
           style="flex:1;background:rgba(15,23,42,0.7);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#e2e8f0;padding:7px 12px;font-size:0.85rem;outline:none;"
@@ -230,19 +328,40 @@
       </div>
     </div>
 
+    <!-- Right: Equipment status -->
+    <div class="split-panel">
+      <div class="panel-label">
+        <i class="fa-solid fa-circle-dot" style="color:#22c55e;"></i> Equipment Status
+        <button id="btn-show-all" onclick="toggleShowAll()" style="margin-left:auto;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#94a3b8;border-radius:6px;padding:3px 10px;font-size:0.7rem;cursor:pointer;white-space:nowrap;">Show All</button>
+      </div>
+      <div class="eq-status-list" id="eq-status-list">
+        <div style="color:#475569;font-size:0.8rem;text-align:center;padding:20px;">Loading...</div>
+      </div>
+    </div>
+
   </div>
 
 </div>
 
 <script>
+  const SERVER = window.location.origin; // works from any device on the network
   let streaming = false;
 
   const LOCAL_IP_RE = /^192\.168\.|^10\.|^172\.(1[6-9]|2\d|3[01])\./;
 
+  function toYouTubeEmbed(url) {
+    // youtu.be/ID, youtube.com/watch?v=ID, youtube.com/live/ID, youtube.com/shorts/ID
+    const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|live\/|shorts\/|embed\/))([a-zA-Z0-9_-]{11})/);
+    if (!m) return null;
+    return `https://www.youtube.com/embed/${m[1]}?autoplay=1&mute=1&rel=0&modestbranding=1`;
+  }
+
   function resolveFrameSrc(rawUrl) {
+    const yt = toYouTubeEmbed(rawUrl);
+    if (yt) return yt;
     // Route local IPs through proxy so X-Frame-Options headers are stripped
     if (LOCAL_IP_RE.test(rawUrl.replace(/^https?:\/\//i, ''))) {
-      return 'http://localhost:8080/proxy?url=' + encodeURIComponent(rawUrl);
+      return SERVER + '/proxy?url=' + encodeURIComponent(rawUrl);
     }
     return rawUrl;
   }
@@ -272,7 +391,7 @@
     setStatus('Scanning for capture devices...');
 
     try {
-      const r = await fetch('http://localhost:8080/ffmpeg/devices');
+      const r = await fetch(SERVER + '/ffmpeg/devices');
       const data = await r.json();
 
       if (data.error) {
@@ -318,7 +437,7 @@
 
     setStatus('Starting FFmpeg...');
     try {
-      const r = await fetch(`http://localhost:8080/ffmpeg/start?device=${encodeURIComponent(device)}`);
+      const r = await fetch(`${SERVER}/ffmpeg/start?device=${encodeURIComponent(device)}`);
       const data = await r.json();
       if (!data.started) { setStatus('Failed to start.', 'err'); return; }
     } catch(e) { setStatus('Cannot reach server.', 'err'); return; }
@@ -366,7 +485,7 @@
       URL.revokeObjectURL(img.src);
     };
     // Fetch as blob to avoid browser image caching issues
-    fetch(`http://localhost:8080/ffmpeg/frame?_=${Date.now()}`)
+    fetch(`${SERVER}/ffmpeg/frame?_=${Date.now()}`)
       .then(r => r.status === 204 ? null : r.blob())
       .then(blob => { if (blob && streaming) img.src = URL.createObjectURL(blob); })
       .catch(() => {});
@@ -385,7 +504,7 @@
     document.getElementById('btn-scan').disabled = false;
     document.getElementById('device-select').disabled = false;
     setStatus('Preview stopped.');
-    try { await fetch('http://localhost:8080/ffmpeg/stop'); } catch(e) {}
+    try { await fetch(SERVER + '/ffmpeg/stop'); } catch(e) {}
   }
 
   function setStatus(msg, type = '') {
@@ -394,11 +513,217 @@
     el.className = 'status-bar ' + type;
   }
 
+  // ── Clock ────────────────────────────────────────────────────────────────
+  function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // ── Capture fullscreen ───────────────────────────────────────────────────
+  function toggleCaptureFullscreen() {
+    const panel = document.getElementById('capture-panel');
+    const btn = document.getElementById('btn-fullscreen');
+    const isFs = panel.classList.toggle('fullscreen');
+    btn.innerHTML = isFs
+      ? '<i class="fa-solid fa-compress"></i> Exit Fullscreen'
+      : '<i class="fa-solid fa-expand"></i> Fullscreen';
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      const panel = document.getElementById('capture-panel');
+      if (panel.classList.contains('fullscreen')) toggleCaptureFullscreen();
+    }
+  });
+
   // Auto-scan on load, then auto-start if a device was previously selected
   scanDevices().then(() => {
     const sel = document.getElementById('device-select');
     if (sel.value) startStream();
   });
+
+  // ── Web Presenter card ───────────────────────────────────────────────────
+  const WP_NAME = 'web presenter';
+  let wpDevice = null;
+  let wpCompanionState = {};
+
+  function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  function renderWpCard() {
+    const wrap = document.getElementById('wp-card-wrap');
+    if (!wpDevice) { wrap.innerHTML = ''; return; }
+    const d = wpDevice;
+    const hasIp = !!d.ip;
+    const url = hasIp ? 'http://' + d.ip : '';
+
+    const companionHtml = (d.companionVars || []).map(v => {
+      const raw = wpCompanionState[v.key] ?? '';
+      const val = v.key === 'stream_bitrate' && raw !== '' ? formatBitrate(raw) : raw;
+      if (v.display === 'badge') {
+        const cls = raw === 'Streaming' ? 'streaming' : raw === 'Connecting' ? 'connecting' : 'idle';
+        return `<span class="companion-badge ${cls}" id="wp-cbadge-${v.key}">${esc(val || v.label)}</span>`;
+      }
+      return `<div class="companion-text" id="wp-cbadge-${v.key}" ${val ? '' : 'style="display:none"'}><span class="companion-text-label">${esc(v.label)}:</span> <span class="companion-text-val">${esc(val)}</span></div>`;
+    }).join('');
+
+    wrap.innerHTML = `
+      <div class="eq-card cat-${d.category}">
+        <div class="card-header-row">
+          <div class="card-icon"><i class="fa-solid ${d.icon||'fa-server'}"></i></div>
+          <div style="flex:1;min-width:0;">
+            <div class="card-title">${esc(d.name)}</div>
+          </div>
+          <span class="cat-badge">Encoders</span>
+        </div>
+        <div class="card-ip">
+          ${hasIp ? esc(d.ip) : '<span class="no-ip">No IP assigned</span>'}
+        </div>
+        ${(d.user || d.pass) ? `
+        <div class="card-meta">
+          ${d.user ? `<span><i class="fa-solid fa-user" style="width:12px;"></i>${esc(d.user)}</span>` : ''}
+          ${d.pass ? `<span><i class="fa-solid fa-key" style="width:12px;"></i>${esc(d.pass)}</span>` : ''}
+        </div>` : ''}
+        ${d.notes ? `<div class="card-notes">${esc(d.notes)}</div>` : ''}
+        ${companionHtml}
+        <div class="card-actions">
+          <button class="btn-frame" onclick="window.open('${url}','_blank')" ${!hasIp ? 'disabled' : ''}>
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> Browse
+          </button>
+          <button class="btn-popout" onclick="window.open('${url}','_blank','width=1280,height=720')" ${!hasIp ? 'disabled' : ''} title="Open in app window">
+            <i class="fa-solid fa-window-restore"></i>
+          </button>
+        </div>
+      </div>`;
+  }
+
+  function updateWpBadges() {
+    if (!wpDevice) return;
+    (wpDevice.companionVars || []).forEach(v => {
+      const el = document.getElementById(`wp-cbadge-${v.key}`);
+      if (!el) return;
+      const raw = wpCompanionState[v.key] ?? '';
+      const val = v.key === 'stream_bitrate' && raw !== '' ? formatBitrate(raw) : raw;
+      if (v.display === 'badge') {
+        el.className = 'companion-badge ' + (raw === 'Streaming' ? 'streaming' : raw === 'Connecting' ? 'connecting' : 'idle');
+        el.textContent = val || v.label;
+      } else {
+        const valEl = el.querySelector('.companion-text-val');
+        if (valEl) valEl.textContent = val;
+        el.style.display = val ? '' : 'none';
+      }
+    });
+  }
+
+  function pollWpCompanion() {
+    fetch(SERVER + '/companion')
+      .then(r => r.json())
+      .then(data => { wpCompanionState = data; updateWpBadges(); renderEqStatus(); })
+      .catch(() => {});
+  }
+
+  // ── Firestore: load all equipment ────────────────────────────────────────
+  firebase.initializeApp(FIREBASE_CONFIG);
+  const db = firebase.firestore();
+
+  let allEquipment = [];
+  const eqOnlineStatus = {};
+
+  function formatBitrate(raw) {
+    if (!raw && raw !== 0) return null;
+    const bps = parseFloat(raw);
+    if (isNaN(bps)) return String(raw);
+    return (bps / 1000000).toFixed(2) + ' MB';
+  }
+
+  const seenDevices = new Set();
+  let showAllDevices = false;
+
+  function toggleShowAll() {
+    showAllDevices = !showAllDevices;
+    const btn = document.getElementById('btn-show-all');
+    btn.textContent = showAllDevices ? 'Online Only' : 'Show All';
+    btn.style.color = showAllDevices ? '#60a5fa' : '#94a3b8';
+    btn.style.borderColor = showAllDevices ? 'rgba(96,165,250,0.4)' : 'rgba(255,255,255,0.15)';
+    renderEqStatus();
+  }
+
+  function renderEqStatus() {
+    const list = document.getElementById('eq-status-list');
+    const monitored = allEquipment.filter(d => d.ip && d.monitor && d.category !== 'h2r');
+    const visible = (showAllDevices ? monitored : monitored.filter(d => seenDevices.has(d.id)))
+      .sort((a, b) => {
+        const rank = d => {
+        const online = eqOnlineStatus[d.id] === true;
+        const offline = eqOnlineStatus[d.id] === false;
+        const seen = seenDevices.has(d.id);
+        if (offline && seen) return 0;   // dropped offline — top, flashing
+        if (online) return 1;            // online
+        if (offline && !seen) return 2;  // never seen, just red
+        return 3;                        // unchecked
+      };
+        return rank(a) - rank(b);
+      });
+
+    if (!visible.length) {
+      list.innerHTML = '<div style="color:#475569;font-size:0.8rem;text-align:center;padding:20px;">No devices online</div>';
+      return;
+    }
+
+    list.innerHTML = visible.map(d => {
+      const isOnline = eqOnlineStatus[d.id] === true;
+      const wasSeen  = seenDevices.has(d.id);
+      // Blink only if it was online this session and just dropped offline
+      const shouldBlink = !isOnline && wasSeen;
+      const dotCls  = isOnline ? 'online' : 'offline';
+      const itemCls = isOnline ? '' : ' offline' + (shouldBlink ? '' : ' no-blink');
+
+      const hasCompanion = (d.companionVars || []).length > 0;
+      const streamStateVar = hasCompanion && d.companionVars.find(v => v.key === 'stream_state');
+      const streamStateVal = streamStateVar ? (wpCompanionState['stream_state'] ?? '') : null;
+      const badgeCls = streamStateVal === 'Streaming' ? 'streaming' : streamStateVal === 'Connecting' ? 'connecting' : 'idle';
+
+      return `<div class="eq-status-item${itemCls}" style="flex-wrap:wrap;gap:6px;">
+        <span class="eq-dot ${dotCls}"></span>
+        <span class="eq-name">${esc(d.name)}</span>
+        ${streamStateVal !== null ? `<span class="companion-badge ${badgeCls}" id="eq-status-badge-${d.id}" style="font-size:0.6rem;padding:2px 6px;">${streamStateVal || 'Idle'}</span>` : ''}
+      </div>`;
+    }).join('');
+  }
+
+  function pingEqDevice(d) {
+    if (!d.ip || !d.monitor || d.category === 'h2r') return;
+    const ip = d.ip.split(':')[0].split('/')[0];
+    console.log(`Pinging ${d.name} at ${ip}`);
+    fetch(`${SERVER}/ping?ip=${encodeURIComponent(ip)}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.online) seenDevices.add(d.id);
+        eqOnlineStatus[d.id] = data.online;
+        renderEqStatus();
+      })
+      .catch(() => { eqOnlineStatus[d.id] = false; renderEqStatus(); });
+  }
+
+  function pingAllEq() { allEquipment.forEach(pingEqDevice); }
+
+  db.collection('equipment').orderBy('name').get().then(snapshot => {
+    allEquipment = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    console.log('Loaded equipment:', allEquipment.map(d => `${d.name} monitor=${d.monitor} ip=${d.ip}`));
+    wpDevice = allEquipment.find(d => (d.name || '').toLowerCase().includes(WP_NAME)) || null;
+    renderWpCard();
+    if (wpDevice && (wpDevice.companionVars || []).length) {
+      pollWpCompanion();
+      setInterval(pollWpCompanion, 10000);
+    }
+    renderEqStatus();
+    pingAllEq();
+    setInterval(pingAllEq, 5000);
+  }).catch(e => console.error('Firestore error:', e));
 </script>
 </body>
 </html>

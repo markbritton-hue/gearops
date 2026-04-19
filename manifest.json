@@ -1,0 +1,11 @@
+{
+  "name": "GearOps",
+  "short_name": "GearOps",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    { "src": "Gearops-trans2.png", "sizes": "any", "type": "image/png" }
+  ]
+}
