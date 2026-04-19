@@ -1,6 +1,7 @@
 node_modules/
 .claude/
 SKILL-Session-Close.md
+CLAUDE.md
 brave-app-profile/
 capture-frame.jpg
 debug.log
