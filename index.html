@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="manifest" href="/manifest.json" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="GearOps" />
@@ -33,7 +34,7 @@
       z-index: 100;
     }
     .top-nav h1 { font-size: 1.25rem; font-weight: 700; color: #60a5fa; margin: 0; }
-    .top-nav .subtitle { font-size: 0.78rem; color: #64748b; margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .top-nav .subtitle { font-size: 0.78rem; color: #8397a8; margin-left: auto; display: flex; align-items: center; gap: 8px; }
     .btn-edit-mode {
       background: rgba(251,191,36,0.15);
       border: 1px solid rgba(251,191,36,0.3);
@@ -70,7 +71,7 @@
     /* ── SEARCH ── */
     .search-bar { padding: 16px 20px 0; }
     .search-wrap { position: relative; max-width: 380px; }
-    .search-wrap i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #475569; font-size: 0.85rem; pointer-events: none; }
+    .search-wrap i { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #8397a8; font-size: 0.85rem; pointer-events: none; }
     #search-input {
       width: 100%;
       background: rgba(30,41,59,0.8);
@@ -82,9 +83,9 @@
       outline: none;
       transition: border-color 0.2s;
     }
-    #search-input::placeholder { color: #475569; }
+    #search-input::placeholder { color: #8397a8; }
     #search-input:focus { border-color: rgba(96,165,250,0.5); }
-    .search-clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #475569; cursor: pointer; font-size: 0.8rem; display: none; padding: 2px 4px; }
+    .search-clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #8397a8; cursor: pointer; font-size: 0.8rem; display: none; padding: 2px 4px; }
     .search-clear:hover { color: #94a3b8; }
 
     /* ── FILTERS ── */
@@ -137,7 +138,7 @@
     .view-toggle { display: flex; gap: 4px; margin-left: 8px; }
     .view-btn {
       background: rgba(30,41,59,0.6); border: 1px solid rgba(255,255,255,0.15);
-      color: #64748b; border-radius: 8px; width: 32px; height: 32px;
+      color: #8397a8; border-radius: 8px; width: 32px; height: 32px;
       display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.85rem;
       transition: all 0.15s;
     }
@@ -225,10 +226,10 @@
 
     .card-ip { font-family: 'Courier New', monospace; font-size: 0.82rem; color: #ffffff; display: flex; align-items: center; gap: 6px; }
     .eq-card.offline .card-ip { color: #ffffff; }
-    .card-ip .no-ip { color: #475569; font-style: italic; font-family: inherit; }
-    .card-meta { font-size: 0.76rem; color: #64748b; display: flex; flex-direction: column; gap: 2px; }
+    .card-ip .no-ip { color: #8397a8; font-style: italic; font-family: inherit; }
+    .card-meta { font-size: 0.76rem; color: #8397a8; display: flex; flex-direction: column; gap: 2px; }
     .card-meta span { display: flex; align-items: center; gap: 5px; }
-    .card-notes { font-size: 0.75rem; color: #475569; font-style: italic; }
+    .card-notes { font-size: 0.75rem; color: #8397a8; font-style: italic; }
 
     .status-dot { display: none; }
 
@@ -236,7 +237,7 @@
       display: inline-flex; align-items: center; gap: 5px;
       font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
       padding: 3px 9px; border-radius: 20px;
-      background: rgba(51,65,85,0.6); color: #475569; border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(51,65,85,0.6); color: #8397a8; border: 1px solid rgba(255,255,255,0.08);
       transition: background 0.3s, color 0.3s, box-shadow 0.3s;
     }
     .status-badge::before {
@@ -257,7 +258,7 @@
     .companion-badge.idle       { background: rgba(34,197,94,0.15);  color: #22c55e; border-color: rgba(34,197,94,0.3);  box-shadow: 0 0 8px rgba(34,197,94,0.2); }
     @keyframes pulse-green { 0%,100% { box-shadow: 0 0 6px rgba(34,197,94,0.3); } 50% { box-shadow: 0 0 14px rgba(34,197,94,0.7); } }
     .companion-text { font-size: 0.78rem; color: #94a3b8; }
-    .companion-text-label { color: #64748b; font-size: 0.72rem; }
+    .companion-text-label { color: #8397a8; font-size: 0.72rem; }
 
     /* ── LIST VIEW ── */
     .cards-grid.list-view { display: flex; flex-direction: column; gap: 6px; }
@@ -294,7 +295,7 @@
     #frame-panel { display: none; position: sticky; bottom: 0; background: rgba(15,23,42,0.98); border-top: 2px solid rgba(96,165,250,0.3); z-index: 50; }
     .frame-bar { display: flex; align-items: center; padding: 10px 16px; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); }
     .frame-bar .frame-title { font-size: 0.9rem; font-weight: 600; color: #60a5fa; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .frame-bar .frame-ip { font-family: monospace; font-size: 0.78rem; color: #64748b; }
+    .frame-bar .frame-ip { font-family: monospace; font-size: 0.78rem; color: #8397a8; }
     .frame-ctrl-btn { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); color: #94a3b8; border-radius: 6px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.8rem; transition: background 0.15s; }
     .frame-ctrl-btn:hover { background: rgba(255,255,255,0.12); color: #e2e8f0; }
     #frame-wrapper { position: relative; height: 480px; transition: height 0.2s; }
@@ -362,7 +363,7 @@
     .btn-delete-confirm { background: #ef4444; border: none; color: #fff; border-radius: 8px; padding: 9px 24px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
     .btn-delete-confirm:hover { background: #f87171; }
 
-    .empty-state { text-align: center; padding: 60px 20px; color: #475569; display: none; }
+    .empty-state { text-align: center; padding: 60px 20px; color: #8397a8; display: none; }
     .empty-state i { font-size: 2.5rem; margin-bottom: 12px; }
 
     @media (max-width: 575px) {
@@ -384,6 +385,7 @@
   <button class="btn-add-device" id="btn-add" onclick="openAddModal()">
     <i class="fa-solid fa-plus"></i> Add Device
   </button>
+  <a href="/setup.html" title="Setup / Import" style="background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2);color:#60a5fa;border-radius:8px;padding:6px 12px;font-size:0.8rem;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:6px;"><i class="fa-solid fa-gear"></i></a>
   <button class="btn-edit-mode" id="btn-edit-mode" onclick="toggleEditMode()">
     <i class="fa-solid fa-pen-to-square"></i> Edit
   </button>
@@ -455,7 +457,10 @@
 <!-- ADD / EDIT MODAL -->
 <div class="modal-overlay" id="edit-modal" onclick="handleOverlayClick(event,'edit-modal')">
   <div class="modal-box">
-    <h2 id="modal-title">Add Device</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <h2 id="modal-title" style="margin:0;">Add Device</h2>
+      <button onclick="closeModal('edit-modal')" title="Close" style="background:rgba(100,116,139,0.2);border:1px solid rgba(100,116,139,0.3);color:#94a3b8;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.9rem;flex-shrink:0;"><i class="fa-solid fa-xmark"></i></button>
+    </div>
     <input type="hidden" id="edit-doc-id" />
 
     <div class="form-grid">
@@ -512,7 +517,7 @@
       <div class="form-row" style="grid-column:1/-1">
         <label>App Shortcut / Executable Path</label>
         <input type="text" id="f-apppath" placeholder="C:\Program Files\OBS Studio\bin\64bit\obs64.exe" />
-        <small style="color:#475569;font-size:0.74rem;margin-top:3px;">.exe or .lnk shortcut path — used to launch the app directly</small>
+        <small style="color:#8397a8;font-size:0.74rem;margin-top:3px;">.exe or .lnk shortcut path — used to launch the app directly</small>
       </div>
       <div class="form-row">
         <label>Username</label>
@@ -551,11 +556,11 @@
       <div class="form-row" style="grid-column:1/-1">
         <label>Companion Connection Label</label>
         <input type="text" id="f-companion-label" placeholder="e.g. WebPresenter" />
-        <small style="color:#475569;font-size:0.74rem;margin-top:3px;">The label of this device's connection in Bitfocus Companion</small>
+        <small style="color:#8397a8;font-size:0.74rem;margin-top:3px;">The label of this device's connection in Bitfocus Companion</small>
       </div>
       <div class="form-row" style="grid-column:1/-1">
         <label>Companion Variables</label>
-        <small style="color:#475569;font-size:0.74rem;margin-bottom:8px;display:block;">One per line. Format: <code style="color:#94a3b8">key | Label | badge|text</code><br>
+        <small style="color:#8397a8;font-size:0.74rem;margin-bottom:8px;display:block;">One per line. Format: <code style="color:#94a3b8">key | Label | badge|text</code><br>
         Example: <code style="color:#94a3b8">stream_state | Streaming | badge</code> or <code style="color:#94a3b8">stream_duration | Duration | text</code></small>
         <textarea id="f-companion-vars" placeholder="stream_state | Streaming State | badge&#10;stream_duration | Duration | text" style="font-family:monospace;font-size:0.8rem;min-height:90px;"></textarea>
       </div>
@@ -602,10 +607,10 @@
 
     <h3 style="color:#60a5fa;font-size:0.9rem;margin:16px 0 8px;border-bottom:1px solid rgba(96,165,250,0.2);padding-bottom:6px;">Step 3 — Configure the HTTP Action</h3>
     <table style="width:100%;font-size:0.82rem;border-collapse:collapse;margin-bottom:8px;">
-      <tr><td style="color:#64748b;padding:4px 8px 4px 0;white-space:nowrap;vertical-align:top;">Method</td><td style="color:#e2e8f0;padding:4px 0;"><code style="background:rgba(255,255,255,0.07);padding:2px 6px;border-radius:4px;">POST</code></td></tr>
-      <tr><td style="color:#64748b;padding:4px 8px 4px 0;white-space:nowrap;vertical-align:top;">URL</td><td style="color:#e2e8f0;padding:4px 0;"><code style="background:rgba(255,255,255,0.07);padding:2px 6px;border-radius:4px;">http://192.168.0.121:8080/companion</code></td></tr>
-      <tr><td style="color:#64748b;padding:4px 8px 4px 0;white-space:nowrap;vertical-align:top;">Content-Type</td><td style="color:#e2e8f0;padding:4px 0;"><code style="background:rgba(255,255,255,0.07);padding:2px 6px;border-radius:4px;">application/json</code></td></tr>
-      <tr><td style="color:#64748b;padding:4px 8px 4px 0;white-space:nowrap;vertical-align:top;">JSON Stringify</td><td style="color:#f87171;padding:4px 0;font-weight:600;">UNCHECKED</td></tr>
+      <tr><td style="color:#8397a8;padding:4px 8px 4px 0;white-space:nowrap;vertical-align:top;">Method</td><td style="color:#e2e8f0;padding:4px 0;"><code style="background:rgba(255,255,255,0.07);padding:2px 6px;border-radius:4px;">POST</code></td></tr>
+      <tr><td style="color:#8397a8;padding:4px 8px 4px 0;white-space:nowrap;vertical-align:top;">URL</td><td style="color:#e2e8f0;padding:4px 0;"><code style="background:rgba(255,255,255,0.07);padding:2px 6px;border-radius:4px;">http://192.168.0.121:8080/companion</code></td></tr>
+      <tr><td style="color:#8397a8;padding:4px 8px 4px 0;white-space:nowrap;vertical-align:top;">Content-Type</td><td style="color:#e2e8f0;padding:4px 0;"><code style="background:rgba(255,255,255,0.07);padding:2px 6px;border-radius:4px;">application/json</code></td></tr>
+      <tr><td style="color:#8397a8;padding:4px 8px 4px 0;white-space:nowrap;vertical-align:top;">JSON Stringify</td><td style="color:#f87171;padding:4px 0;font-weight:600;">UNCHECKED</td></tr>
     </table>
 
     <h3 style="color:#60a5fa;font-size:0.9rem;margin:16px 0 8px;border-bottom:1px solid rgba(96,165,250,0.2);padding-bottom:6px;">Step 4 — Body (example for Web Presenter)</h3>
@@ -614,7 +619,7 @@
   "stream_duration": "$(WebPresenter:stream_duration)",
   "platform": "$(WebPresenter:platform)"
 }</pre>
-    <p style="color:#64748b;font-size:0.78rem;margin:6px 0 0;">Replace <code style="color:#a5f3fc;">WebPresenter</code> with your Companion connection label. Add or remove lines for each variable you want.</p>
+    <p style="color:#8397a8;font-size:0.78rem;margin:6px 0 0;">Replace <code style="color:#a5f3fc;">WebPresenter</code> with your Companion connection label. Add or remove lines for each variable you want.</p>
 
     <h3 style="color:#60a5fa;font-size:0.9rem;margin:16px 0 8px;border-bottom:1px solid rgba(96,165,250,0.2);padding-bottom:6px;">Step 5 — Add Variables to an Equipment Card</h3>
     <ol style="color:#94a3b8;font-size:0.83rem;padding-left:1.3em;line-height:1.8;">
@@ -627,7 +632,7 @@
     <pre style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:10px;font-size:0.78rem;color:#a5f3fc;white-space:pre-wrap;word-break:break-all;min-height:100px;">stream_state | Streaming State | badge
 stream_duration | Duration | text
 platform | Platform | text</pre>
-    <p style="color:#64748b;font-size:0.78rem;margin:6px 0 0;">Format: <code style="color:#a5f3fc;">key | Label | badge</code> or <code style="color:#a5f3fc;">key | Label | text</code>. The key must match what's in the POST body above.</p>
+    <p style="color:#8397a8;font-size:0.78rem;margin:6px 0 0;">Format: <code style="color:#a5f3fc;">key | Label | badge</code> or <code style="color:#a5f3fc;">key | Label | text</code>. The key must match what's in the POST body above.</p>
 
     <div class="modal-actions" style="margin-top:20px;">
       <button class="btn-cancel" onclick="closeModal('help-modal')">Close</button>
@@ -635,16 +640,8 @@ platform | Platform | text</pre>
   </div>
 </div>
 
-<!-- Firebase compat SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
-<script src="firebase.config.js"></script>
 <script>
   const SERVER = window.location.origin;
-
-  // ── Firebase init ────────────────────────────────────────────────────────
-  firebase.initializeApp(FIREBASE_CONFIG);
-  const db = firebase.firestore();
 
   // ── State ────────────────────────────────────────────────────────────────
   let EQUIPMENT = [];           // live array from Firestore
@@ -672,12 +669,17 @@ platform | Platform | text</pre>
     routing: 'Routing', software: 'Software', h2r: 'H2R',
   };
 
-  // ── Firestore real-time listener ─────────────────────────────────────────
-  db.collection('equipment').orderBy('name').onSnapshot(snapshot => {
-    EQUIPMENT = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    render();
-    pingAll();
-  }, err => console.error('Firestore error:', err));
+  // ── Load devices from local server ───────────────────────────────────────
+  async function loadDevices() {
+    try {
+      const r = await fetch('/devices');
+      EQUIPMENT = await r.json();
+      render();
+      pingAll();
+    } catch(e) { console.error('Failed to load devices:', e); }
+  }
+  loadDevices();
+  setInterval(loadDevices, 10000);
 
   // ── Render ───────────────────────────────────────────────────────────────
   function render() {
@@ -881,10 +883,11 @@ platform | Platform | text</pre>
     try {
       const docId = document.getElementById('edit-doc-id').value;
       if (docId) {
-        await db.collection('equipment').doc(docId).update(data);
+        await fetch('/devices/' + docId, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
       } else {
-        await db.collection('equipment').add(data);
+        await fetch('/devices', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
       }
+      await loadDevices();
       closeModal('edit-modal');
     } catch (err) {
       showModalError('Save failed: ' + err.message);
@@ -913,7 +916,8 @@ platform | Platform | text</pre>
     const btn = document.getElementById('btn-confirm-delete');
     btn.disabled = true;
     try {
-      await db.collection('equipment').doc(pendingDeleteId).delete();
+      await fetch('/devices/' + pendingDeleteId, { method: 'DELETE' });
+      await loadDevices();
       closeModal('delete-modal');
     } catch (err) {
       alert('Delete failed: ' + err.message);

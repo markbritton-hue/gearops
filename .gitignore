@@ -11,3 +11,5 @@ equipment.json
 seed-firestore.js
 add-devices.html
 update-h2r.html
+devices.json
+migrate.html

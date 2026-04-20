@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { exec, spawn } = require('child_process');
 const { URL } = require('url');
+const { randomUUID } = require('crypto');
 
 const localConfig = (() => {
   try { return require('./local.config.js'); }
@@ -18,6 +19,16 @@ const COMPANION_CFG = localConfig.companion || null; // { host, port } for butto
 
 let ffmpegProcess = null;
 const FRAME_PATH = path.join(__dirname, 'capture-frame.jpg');
+
+// ── Devices store ────────────────────────────────────────────────────────────
+const DEVICES_PATH = path.join(__dirname, 'devices.json');
+function readDevices() {
+  try { return JSON.parse(fs.readFileSync(DEVICES_PATH, 'utf8')); }
+  catch { return []; }
+}
+function writeDevices(arr) {
+  fs.writeFileSync(DEVICES_PATH, JSON.stringify(arr, null, 2));
+}
 
 // ── Companion push store ──────────────────────────────────────────────────────
 let companionState = {}; // key/value pairs pushed from Companion via POST /companion
@@ -351,6 +362,106 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ stopped: true }));
     return;
+  }
+
+  // ── Fetch CSV (Google Sheets proxy) ──────────────────────────────────────
+  if (url.pathname === '/fetch-csv') {
+    const target = url.searchParams.get('url') || '';
+    let targetUrl;
+    try { targetUrl = new URL(target); } catch {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Invalid URL' }));
+    }
+    if (!targetUrl.hostname.endsWith('google.com')) {
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'Only Google Sheets URLs allowed' }));
+    }
+    const lib2 = https;
+    const req2 = lib2.request({
+      hostname: targetUrl.hostname,
+      path: targetUrl.pathname + targetUrl.search,
+      method: 'GET',
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      timeout: 10000,
+    }, (r) => {
+      if ([301,302,303,307,308].includes(r.statusCode) && r.headers.location) {
+        r.resume();
+        res.writeHead(302, { Location: `/fetch-csv?url=${encodeURIComponent(r.headers.location)}` });
+        return res.end();
+      }
+      const chunks = [];
+      r.on('data', c => chunks.push(c));
+      r.on('end', () => {
+        res.writeHead(200, { 'Content-Type': 'text/csv; charset=utf-8', 'Access-Control-Allow-Origin': '*' });
+        res.end(Buffer.concat(chunks));
+      });
+    });
+    req2.on('error', e => { res.writeHead(502); res.end(JSON.stringify({ error: e.message })); });
+    req2.on('timeout', () => { req2.destroy(); res.writeHead(504); res.end('Timeout'); });
+    req2.end();
+    return;
+  }
+
+  // ── Devices: GET all ─────────────────────────────────────────────────────
+  if (url.pathname === '/devices' && req.method === 'GET') {
+    const devices = readDevices().sort((a, b) => a.name.localeCompare(b.name));
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify(devices));
+  }
+
+  // ── Devices: POST (create) ────────────────────────────────────────────────
+  if (url.pathname === '/devices' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        const devices = readDevices();
+        const device = { id: randomUUID(), ...data };
+        devices.push(device);
+        writeDevices(devices);
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(device));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // ── Devices: PUT (update) ─────────────────────────────────────────────────
+  const putMatch = url.pathname.match(/^\/devices\/(.+)$/);
+  if (putMatch && req.method === 'PUT') {
+    const id = putMatch[1];
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        const devices = readDevices();
+        const idx = devices.findIndex(d => d.id === id);
+        if (idx === -1) { res.writeHead(404); return res.end('Not found'); }
+        devices[idx] = { ...devices[idx], ...data, id };
+        writeDevices(devices);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(devices[idx]));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // ── Devices: DELETE ───────────────────────────────────────────────────────
+  const delMatch = url.pathname.match(/^\/devices\/(.+)$/);
+  if (delMatch && req.method === 'DELETE') {
+    const id = delMatch[1];
+    const devices = readDevices().filter(d => d.id !== id);
+    writeDevices(devices);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ deleted: true }));
   }
 
   // ── Static files ──────────────────────────────────────────────────────────
