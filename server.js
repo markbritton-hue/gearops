@@ -71,10 +71,11 @@ async function pollCompanionButtons() {
   }
 }
 
-if (COMPANION_CFG && COMPANION_CFG.buttons) {
+const _initCfg = localConfig.companion || null;
+if (_initCfg && _initCfg.buttons) {
   pollCompanionButtons();
   setInterval(pollCompanionButtons, 10000);
-  console.log(`  Companion button polling: ${COMPANION_CFG.host}:${COMPANION_CFG.port || 8000}`);
+  console.log(`  Companion button polling: ${_initCfg.host}:${_initCfg.port || 8000}`);
 }
 
 const PORT = 8080;
