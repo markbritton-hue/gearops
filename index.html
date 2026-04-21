@@ -146,10 +146,6 @@
     }
     .eq-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
     .eq-card.active-frame { border-color: rgba(96,165,250,0.6); box-shadow: 0 0 0 2px rgba(96,165,250,0.3); }
-    .eq-card.online  { background: rgba(36,52,74,0.95); border-color: rgba(96,165,250,0.35); box-shadow: 0 0 18px rgba(96,165,250,0.08), 0 4px 16px rgba(0,0,0,0.3); filter: brightness(1.12); }
-    .eq-card.online:hover { box-shadow: 0 0 28px rgba(96,165,250,0.15), 0 8px 24px rgba(0,0,0,0.4); filter: brightness(1.18); }
-    .eq-card.offline { opacity: 0.8; filter: grayscale(20%) brightness(0.92); }
-    .eq-card.offline:hover { opacity: 1; filter: none; }
 
     /* Edit mode overlay buttons */
     .card-edit-actions {
@@ -195,6 +191,10 @@
     .eq-card.cat-routing    { background: rgba(56,189,248,0.08);  border-color: rgba(56,189,248,0.2); }
     .eq-card.cat-software   { background: rgba(74,222,128,0.08);  border-color: rgba(74,222,128,0.2); }
     .eq-card.cat-h2r        { background: rgba(232,121,249,0.08); border-color: rgba(232,121,249,0.2); }
+    .eq-card.online  { background: rgba(20,83,45,0.35); border-color: rgba(34,197,94,0.45); box-shadow: 0 0 18px rgba(34,197,94,0.1), 0 4px 16px rgba(0,0,0,0.3); }
+    .eq-card.online:hover { box-shadow: 0 0 28px rgba(34,197,94,0.2), 0 8px 24px rgba(0,0,0,0.4); }
+    .eq-card.offline { background: rgba(127,29,29,0.35); border-color: rgba(239,68,68,0.4); opacity: 0.85; }
+    .eq-card.offline:hover { opacity: 1; }
 
     .card-title { font-size: 0.95rem; font-weight: 600; color: #f1f5f9; line-height: 1.2; }
     .cat-badge { font-size: 0.68rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-left: auto; flex-shrink: 0; }
@@ -826,7 +826,7 @@ Cut | 1 | 1 | 0</pre>
     } catch(e) { console.error('Failed to load devices:', e); }
   }
   loadDevices(true);
-  setInterval(loadDevices, +(localStorage.getItem('gearops_refresh_interval') || 10000));
+  setInterval(pingAll, +(localStorage.getItem('gearops_refresh_interval') || 10000));
 
   // ── Render ───────────────────────────────────────────────────────────────
   function render() {
