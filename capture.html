@@ -128,8 +128,10 @@
     .controls-card { background: rgba(30,41,59,0.8); border: 1px solid rgba(96,165,250,0.15); border-radius: 10px; padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 12px; }
 
     /* Equipment card styles (mirrored from main page) */
-    .eq-card { background: rgba(30,41,59,0.8); border: 1px solid rgba(96,165,250,0.15); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; transition: transform 0.15s, box-shadow 0.15s; position: relative; margin-bottom: 8px; }
+    .eq-card { background: rgba(30,41,59,0.8); border: 1px solid rgba(96,165,250,0.15); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; transition: transform 0.15s, box-shadow 0.15s, opacity 0.3s, filter 0.3s; position: relative; margin-bottom: 8px; }
     .eq-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    .eq-card.online  { background: rgba(36,52,74,0.95); border-color: rgba(96,165,250,0.35); box-shadow: 0 0 18px rgba(96,165,250,0.08), 0 4px 16px rgba(0,0,0,0.3); filter: brightness(1.12); }
+    .eq-card.offline { opacity: 0.8; filter: grayscale(20%) brightness(0.92); }
     .card-header-row { display: flex; align-items: flex-start; gap: 10px; }
     .card-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
     .cat-computing  .card-icon { background: rgba(96,165,250,0.15);  color: #60a5fa; }
@@ -140,6 +142,7 @@
     .cat-hyperdecks .card-icon { background: rgba(251,146,60,0.15);  color: #fb923c; }
     .cat-routing    .card-icon { background: rgba(56,189,248,0.15);  color: #38bdf8; }
     .cat-software   .card-icon { background: rgba(74,222,128,0.15);  color: #4ade80; }
+    .cat-h2r        .card-icon { background: rgba(232,121,249,0.15); color: #e879f9; }
     .eq-card.cat-computing  { background: rgba(96,165,250,0.08);  border-color: rgba(96,165,250,0.2); }
     .eq-card.cat-network    { background: rgba(245,158,11,0.08);  border-color: rgba(245,158,11,0.2); }
     .eq-card.cat-cameras    { background: rgba(52,211,153,0.08);  border-color: rgba(52,211,153,0.2); }
@@ -148,6 +151,7 @@
     .eq-card.cat-hyperdecks { background: rgba(251,146,60,0.08);  border-color: rgba(251,146,60,0.2); }
     .eq-card.cat-routing    { background: rgba(56,189,248,0.08);  border-color: rgba(56,189,248,0.2); }
     .eq-card.cat-software   { background: rgba(74,222,128,0.08);  border-color: rgba(74,222,128,0.2); }
+    .eq-card.cat-h2r        { background: rgba(232,121,249,0.08); border-color: rgba(232,121,249,0.2); }
     .card-title { font-size: 0.95rem; font-weight: 600; color: #f1f5f9; line-height: 1.2; }
     .cat-badge { font-size: 0.68rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-left: auto; flex-shrink: 0; }
     .cat-computing  .cat-badge { background: rgba(96,165,250,0.2);  color: #60a5fa; }
@@ -158,11 +162,21 @@
     .cat-hyperdecks .cat-badge { background: rgba(251,146,60,0.2);  color: #fb923c; }
     .cat-routing    .cat-badge { background: rgba(56,189,248,0.2);  color: #38bdf8; }
     .cat-software   .cat-badge { background: rgba(74,222,128,0.2);  color: #4ade80; }
-    .card-ip { font-family: 'Courier New', monospace; font-size: 0.82rem; color: #fff; display: flex; align-items: center; gap: 6px; }
+    .cat-h2r        .cat-badge { background: rgba(232,121,249,0.2); color: #e879f9; }
+    .card-ip { font-family: 'Courier New', monospace; font-size: 0.82rem; color: #fff; display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
     .card-ip .no-ip { color: #8397a8; font-style: italic; font-family: inherit; }
+    .card-ip span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .card-meta { font-size: 0.76rem; color: #8397a8; display: flex; flex-direction: column; gap: 2px; }
     .card-meta span { display: flex; align-items: center; gap: 5px; }
     .card-notes { font-size: 0.75rem; color: #8397a8; font-style: italic; }
+    .status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; background: rgba(51,65,85,0.6); color: #8397a8; border: 1px solid rgba(255,255,255,0.08); transition: background 0.3s, color 0.3s; }
+    .status-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .status-badge.online  { background: rgba(34,197,94,0.15);  color: #22c55e; border-color: rgba(34,197,94,0.3); }
+    .status-badge.offline { background: rgba(255,32,32,0.15);  color: #ff4444; border-color: rgba(255,32,32,0.3); }
+    .btn-companion-press { flex: 1; border: none; border-radius: 8px; padding: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 36px; background: rgba(167,139,250,0.2); color: #a78bfa; transition: background 0.15s, transform 0.1s; }
+    .btn-companion-press:hover { background: rgba(167,139,250,0.35); }
+    .btn-companion-press:active { transform: scale(0.97); }
+    .btn-companion-press.pressed { background: #a78bfa; color: #0f172a; }
     .companion-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; padding: 3px 9px; border-radius: 20px; border: 1px solid; width: fit-content; transition: all 0.3s; }
     .companion-badge::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
     .companion-badge.streaming  { background: rgba(255,32,32,0.15);  color: #ff4444; border-color: rgba(255,32,32,0.3);  box-shadow: 0 0 8px rgba(255,32,32,0.3); animation: pulse-badge 2s infinite; }
@@ -595,9 +609,32 @@
 
   function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
+  const CAT_DEFAULTS = {
+    computing:  { label:'Computing',  color:'#60a5fa', icon:'fa-microchip' },
+    network:    { label:'Network',    color:'#f59e0b', icon:'fa-network-wired' },
+    cameras:    { label:'Cameras',    color:'#34d399', icon:'fa-video' },
+    encoders:   { label:'Encoders',   color:'#f472b6', icon:'fa-broadcast-tower' },
+    atems:      { label:'ATEMs',      color:'#a78bfa', icon:'fa-sliders' },
+    hyperdecks: { label:'HyperDecks', color:'#fb923c', icon:'fa-hdd' },
+    routing:    { label:'Routing',    color:'#38bdf8', icon:'fa-diagram-project' },
+    software:   { label:'Software',   color:'#4ade80', icon:'fa-rocket' },
+    h2r:        { label:'H2R',        color:'#e879f9', icon:'fa-layer-group' },
+  };
+  const CUSTOM_PALETTE = ['#fb7185','#facc15','#a3e635','#14b8a6','#6366f1','#f97316','#06b6d4','#c084fc'];
+  function crCatColor(cat) {
+    if (CAT_DEFAULTS[cat]) return CAT_DEFAULTS[cat].color;
+    let h = 0; for (let i = 0; i < cat.length; i++) h = (h*31+cat.charCodeAt(i))&0xffff;
+    return CUSTOM_PALETTE[h % CUSTOM_PALETTE.length];
+  }
+  function crCatLabel(cat) { return CAT_DEFAULTS[cat] ? CAT_DEFAULTS[cat].label : cat.charAt(0).toUpperCase()+cat.slice(1); }
+  function hex2rgb(hex) { return `${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`; }
+
   function buildDeviceCard(d) {
     const hasIp = !!d.ip;
     const url = hasIp ? 'http://' + d.ip : '';
+    const color = crCatColor(d.category);
+    const rgb = hex2rgb(color);
+    const onlineCls = crOnlineStatus[d.id] === true ? ' online' : crOnlineStatus[d.id] === false ? ' offline' : '';
     const companionHtml = (d.companionVars || []).map(v => {
       const raw = wpCompanionState[v.key] ?? '';
       const val = v.key === 'stream_bitrate' && raw !== '' ? formatBitrate(raw) : raw;
@@ -608,18 +645,28 @@
       return `<div class="companion-text" id="cr-cbadge-${d.id}-${v.key}" ${val ? '' : 'style="display:none"'}><span class="companion-text-label">${esc(v.label)}:</span> <span class="companion-text-val">${esc(val)}</span></div>`;
     }).join('');
     return `
-      <div class="eq-card cat-${d.category}">
+      <div class="eq-card cat-${d.category}${onlineCls}" id="cr-card-${d.id}">
         <div class="card-header-row">
           <div class="card-icon"><i class="fa-solid ${d.icon||'fa-server'}"></i></div>
           <div style="flex:1;min-width:0;"><div class="card-title">${esc(d.name)}</div></div>
-          <span class="cat-badge" style="font-size:0.68rem;padding:2px 8px;border-radius:10px;font-weight:600;text-transform:uppercase;">${esc(d.category)}</span>
+          <span class="cat-badge" style="background:rgba(${rgb},0.2);color:${color};">${crCatLabel(d.category)}</span>
         </div>
-        <div class="card-ip">${hasIp ? esc(d.ip) : '<span class="no-ip">No IP assigned</span>'}</div>
+        <div class="card-ip" style="justify-content:space-between;">
+          ${d.monitor && hasIp ? `<span class="status-badge ${crOnlineStatus[d.id] === true ? 'online' : crOnlineStatus[d.id] === false ? 'offline' : ''}" id="cr-status-${d.id}">${crOnlineStatus[d.id] === true ? 'Online' : crOnlineStatus[d.id] === false ? 'Offline' : 'Checking...'}</span>` : ''}
+          <span>${hasIp ? esc(d.ip) : (d.appKey||d.appPath) ? '<span class="no-ip">Local application</span>' : '<span class="no-ip">No IP assigned</span>'}</span>
+        </div>
         ${(d.user || d.pass) ? `<div class="card-meta">
           ${d.user ? `<span><i class="fa-solid fa-user" style="width:12px;"></i>${esc(d.user)}</span>` : ''}
           ${d.pass ? `<span><i class="fa-solid fa-key" style="width:12px;"></i>${esc(d.pass)}</span>` : ''}
         </div>` : ''}
         ${d.notes ? `<div class="card-notes">${esc(d.notes)}</div>` : ''}
+        ${(d.companionButtons||[]).length ? `
+        <div class="card-actions" style="flex-wrap:wrap;">
+          ${(d.companionButtons||[]).map(b => `
+          <button class="btn-companion-press" onclick="pressCRCompanionButton(${b.page},${b.row},${b.col},this)" title="Companion ${b.page}/${b.row}/${b.col}">
+            <i class="fa-solid fa-circle-dot"></i> ${esc(b.label)}
+          </button>`).join('')}
+        </div>` : ''}
         ${companionHtml}
         ${(d.appKey || d.appPath || d.browserEnabled) ? `
         <div class="card-actions">
@@ -644,6 +691,21 @@
       ? `${SERVER}/launch-path?path=${encodeURIComponent(d.appPath)}`
       : `${SERVER}/launch?app=${encodeURIComponent(d.appKey)}`;
     fetch(url).catch(() => alert('Server not reachable. Is start.bat running?'));
+  }
+
+  function updateCrCardStatus(id, online) {
+    const card = document.getElementById('cr-card-' + id);
+    if (card) { card.classList.toggle('online', online); card.classList.toggle('offline', !online); }
+    const badge = document.getElementById('cr-status-' + id);
+    if (badge) { badge.className = 'status-badge ' + (online ? 'online' : 'offline'); badge.textContent = online ? 'Online' : 'Offline'; }
+  }
+
+  function pressCRCompanionButton(page, row, col, btnEl) {
+    if (btnEl) { btnEl.classList.add('pressed'); btnEl.disabled = true; }
+    fetch(`${SERVER}/companion/press?page=${page}&row=${row}&col=${col}`)
+      .then(r => r.json())
+      .catch(e => console.warn('Companion press error:', e))
+      .finally(() => { setTimeout(() => { if (btnEl) { btnEl.classList.remove('pressed'); btnEl.disabled = false; } }, 400); });
   }
 
   function updateCompanionEl(el, v, raw) {
@@ -680,6 +742,7 @@
 
   let allEquipment = [];
   const eqOnlineStatus = {};
+  const crOnlineStatus = eqOnlineStatus; // alias — same object, used by buildDeviceCard
 
   function formatBitrate(raw) {
     if (!raw && raw !== 0) return null;
@@ -782,8 +845,9 @@
         if (data.online) seenDevices.add(d.id);
         eqOnlineStatus[d.id] = data.online;
         renderEqStatus();
+        updateCrCardStatus(d.id, data.online);
       })
-      .catch(() => { eqOnlineStatus[d.id] = false; renderEqStatus(); });
+      .catch(() => { eqOnlineStatus[d.id] = false; renderEqStatus(); updateCrCardStatus(d.id, false); });
   }
 
   function pingAllEq() { allEquipment.forEach(pingEqDevice); }
