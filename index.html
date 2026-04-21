@@ -272,6 +272,10 @@
     .btn-launch { background: rgba(74,222,128,0.2); color: #4ade80; }
     .btn-launch:hover { background: rgba(74,222,128,0.3); }
     .btn-launch.launching { opacity: 0.7; cursor: wait; }
+    .btn-companion-press { flex: 1; border: none; border-radius: 8px; padding: 8px; font-size: 0.78rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 36px; background: rgba(167,139,250,0.2); color: #a78bfa; transition: background 0.15s, transform 0.1s; }
+    .btn-companion-press:hover { background: rgba(167,139,250,0.35); }
+    .btn-companion-press:active { transform: scale(0.97); }
+    .btn-companion-press.pressed { background: #a78bfa; color: #0f172a; }
     .btn-popout { flex: 0 0 36px; background: rgba(167,139,250,0.2); color: #a78bfa; }
     .btn-popout:hover { background: rgba(167,139,250,0.3); }
     .btn-frame:disabled, .btn-tab:disabled, .btn-popout:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -547,6 +551,12 @@
         <label>Companion Connection Label</label>
         <input type="text" id="f-companion-label" placeholder="e.g. WebPresenter" />
         <small style="color:#8397a8;font-size:0.74rem;margin-top:3px;">The label of this device's connection in Bitfocus Companion</small>
+      </div>
+      <div class="form-row" style="grid-column:1/-1">
+        <label>Companion Buttons</label>
+        <small style="color:#8397a8;font-size:0.74rem;margin-bottom:8px;display:block;">One per line. Format: <code style="color:#94a3b8">Label | page | row | col</code><br>
+        Example: <code style="color:#94a3b8">On Air | 1 | 0 | 6</code></small>
+        <textarea id="f-companion-buttons" placeholder="On Air | 1 | 0 | 6" style="font-family:monospace;font-size:0.8rem;min-height:60px;"></textarea>
       </div>
       <div class="form-row" style="grid-column:1/-1">
         <label>Companion Variables</label>
@@ -856,6 +866,13 @@ platform | Platform | text</pre>
           ${d.pass ? `<span><i class="fa-solid fa-key" style="width:12px;"></i>${esc(d.pass)}</span>` : ''}
         </div>` : ''}
         ${d.notes ? `<div class="card-notes">${esc(d.notes)}</div>` : ''}
+        ${(d.companionButtons||[]).length ? `
+        <div class="card-actions" style="flex-wrap:wrap;">
+          ${(d.companionButtons||[]).map(b => `
+          <button class="btn-companion-press" onclick="pressCompanionButton(${b.page},${b.row},${b.col},this)" title="Companion ${b.page}/${b.row}/${b.col}">
+            <i class="fa-solid fa-circle-dot"></i> ${esc(b.label)}
+          </button>`).join('')}
+        </div>` : ''}
         ${(d.companionVars||[]).map(v => {
           const raw = companionState[v.key] ?? '';
           const val = v.key === 'stream_bitrate' && raw !== '' ? fmtMB(raw) : raw;
@@ -928,6 +945,7 @@ platform | Platform | text</pre>
     document.getElementById('f-browser-enabled').checked = false;
     document.getElementById('f-control-room').checked = false;
     document.getElementById('f-companion-label').value = '';
+    document.getElementById('f-companion-buttons').value = '';
     document.getElementById('f-companion-vars').value = '';
     document.getElementById('modal-error').style.display = 'none';
     updateCompanionCopyBtn();
@@ -952,6 +970,7 @@ platform | Platform | text</pre>
     document.getElementById('f-browser-enabled').checked = !!d.browserEnabled;
     document.getElementById('f-control-room').checked = d.showInControlRoom !== false && !!d.monitor;
     document.getElementById('f-companion-label').value = d.companionLabel || '';
+    document.getElementById('f-companion-buttons').value = (d.companionButtons || []).map(b => `${b.label} | ${b.page} | ${b.row} | ${b.col}`).join('\n');
     document.getElementById('f-companion-vars').value = (d.companionVars || []).map(v => `${v.key} | ${v.label} | ${v.display}`).join('\n');
     document.getElementById('modal-error').style.display = 'none';
     updateCompanionCopyBtn();
@@ -978,6 +997,11 @@ platform | Platform | text</pre>
       browserEnabled:    document.getElementById('f-browser-enabled').checked,
       showInControlRoom: document.getElementById('f-control-room').checked,
       companionLabel: document.getElementById('f-companion-label').value.trim(),
+      companionButtons: document.getElementById('f-companion-buttons').value.trim()
+        .split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+          const [label, page, row, col] = l.split('|').map(s => s.trim());
+          return { label: label||'Button', page: parseInt(page)||1, row: parseInt(row)||0, col: parseInt(col)||0 };
+        }),
       companionVars: document.getElementById('f-companion-vars').value.trim()
         .split('\n').map(l => l.trim()).filter(Boolean).map(l => {
           const [key, label, display] = l.split('|').map(s => s.trim());
@@ -1197,6 +1221,17 @@ platform | Platform | text</pre>
   }
 
   // ── App launch ───────────────────────────────────────────────────────────
+  function pressCompanionButton(page, row, col, btnEl) {
+    if (btnEl) { btnEl.classList.add('pressed'); btnEl.disabled = true; }
+    fetch(`${SERVER}/companion/press?page=${page}&row=${row}&col=${col}`)
+      .then(r => r.json())
+      .then(data => { if (!data.ok) console.warn('Companion press failed:', data.error); })
+      .catch(e => console.warn('Companion press error:', e))
+      .finally(() => {
+        setTimeout(() => { if (btnEl) { btnEl.classList.remove('pressed'); btnEl.disabled = false; } }, 400);
+      });
+  }
+
   function launchApp(id) {
     const d = EQUIPMENT.find(e => e.id === id);
     if (!d) return;

@@ -265,6 +265,34 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ── Companion: press a button ─────────────────────────────────────────────
+  if (url.pathname === '/companion/press') {
+    if (!COMPANION_CFG) {
+      res.writeHead(503, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ ok: false, error: 'No companion config' }));
+    }
+    const page = parseInt(url.searchParams.get('page')) || 1;
+    const row  = parseInt(url.searchParams.get('row'))  || 0;
+    const col  = parseInt(url.searchParams.get('col'))  || 0;
+    const pressPath = `/api/location/${page}/${row}/${col}/press`;
+    const req2 = http.request({
+      hostname: COMPANION_CFG.host,
+      port: COMPANION_CFG.port || 8000,
+      path: pressPath,
+      method: 'POST',
+      headers: { 'Content-Length': 0 },
+      timeout: 4000,
+    }, (r) => {
+      r.resume();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, status: r.statusCode }));
+    });
+    req2.on('error', e => { res.writeHead(502, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: false, error: e.message })); });
+    req2.on('timeout', () => { req2.destroy(); res.writeHead(504, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ ok: false, error: 'Timeout' })); });
+    req2.end();
+    return;
+  }
+
   // ── Companion: get current state ─────────────────────────────────────────
   if (url.pathname === '/companion') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
