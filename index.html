@@ -403,6 +403,16 @@
 </div>
 </div>
 
+<!-- LOADING STATE -->
+<div id="loading-state" style="text-align:center;padding:80px 20px;color:#8397a8;">
+  <i class="fa-solid fa-satellite-dish" style="font-size:2.5rem;margin-bottom:16px;color:#60a5fa;animation:spin 1.5s linear infinite;display:block;"></i>
+  <p style="font-size:1rem;font-weight:600;color:#e2e8f0;margin:0 0 6px;">Checking equipment...</p>
+  <p style="font-size:0.82rem;margin:0;">Connecting to all devices on the network</p>
+</div>
+<style>
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>
+
 <!-- CARDS -->
 <div class="cards-grid" id="cards-grid"></div>
 <div class="empty-state" id="empty-state">
@@ -761,6 +771,7 @@ platform | Platform | text</pre>
     try {
       const r = await fetch('/devices');
       EQUIPMENT = await r.json();
+      document.getElementById('loading-state').style.display = 'none';
       buildFilterBar();
       render();
       pingAll();
