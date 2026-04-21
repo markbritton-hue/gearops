@@ -105,6 +105,25 @@
       </select>
       <span class="save-confirm" id="save-confirm"><i class="fa-solid fa-check"></i> Saved</span>
     </div>
+
+    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.07);margin:20px 0;" />
+
+    <div class="settings-row" style="align-items:flex-start;gap:16px;flex-wrap:wrap;">
+      <div class="settings-label">
+        Bitfocus Companion IP
+        <span>IP address of the machine running Companion (port 8000)</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <input type="text" id="companion-ip" placeholder="192.168.x.x"
+          style="background:rgba(15,23,42,0.7);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#e2e8f0;padding:8px 14px;font-size:0.88rem;outline:none;width:180px;font-family:monospace;" />
+        <input type="number" id="companion-port" placeholder="8000" min="1" max="65535"
+          style="background:rgba(15,23,42,0.7);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#e2e8f0;padding:8px 14px;font-size:0.88rem;outline:none;width:100px;" />
+        <button onclick="saveCompanion()" style="background:#60a5fa;border:none;color:#0f172a;border-radius:8px;padding:8px 18px;font-size:0.85rem;font-weight:700;cursor:pointer;">
+          <i class="fa-solid fa-floppy-disk"></i> Save
+        </button>
+        <span class="save-confirm" id="companion-confirm"><i class="fa-solid fa-check"></i> Saved</span>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -119,6 +138,26 @@
     const c = document.getElementById('save-confirm');
     c.style.display = 'inline';
     setTimeout(() => c.style.display = 'none', 2000);
+  }
+
+  // Load current Companion settings from server
+  fetch('/settings').then(r => r.json()).then(data => {
+    if (data.companionHost) document.getElementById('companion-ip').value = data.companionHost;
+    if (data.companionPort) document.getElementById('companion-port').value = data.companionPort;
+  }).catch(() => {});
+
+  function saveCompanion() {
+    const host = document.getElementById('companion-ip').value.trim();
+    const port = parseInt(document.getElementById('companion-port').value) || 8000;
+    fetch('/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ companionHost: host, companionPort: port })
+    }).then(r => r.json()).then(() => {
+      const c = document.getElementById('companion-confirm');
+      c.style.display = 'inline';
+      setTimeout(() => c.style.display = 'none', 2000);
+    }).catch(e => alert('Failed to save: ' + e.message));
   }
 </script>
 

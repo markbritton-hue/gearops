@@ -15,10 +15,25 @@ const FFMPEG      = localConfig.ffmpeg;
 const BRAVE       = localConfig.brave;
 const APP_WHITELIST = localConfig.apps || {};
 const BRAVE_PROFILE = path.join(__dirname, 'brave-app-profile');
-const COMPANION_CFG = localConfig.companion || null; // { host, port } for button polling
 
 let ffmpegProcess = null;
 const FRAME_PATH = path.join(__dirname, 'capture-frame.jpg');
+
+// ── Settings store (runtime config, gitignored) ───────────────────────────────
+const SETTINGS_PATH = path.join(__dirname, 'gearops-settings.json');
+function readSettings() {
+  try { return JSON.parse(fs.readFileSync(SETTINGS_PATH, 'utf8')); }
+  catch { return {}; }
+}
+function writeSettings(obj) {
+  fs.writeFileSync(SETTINGS_PATH, JSON.stringify(obj, null, 2));
+}
+function getCompanionCfg() {
+  const s = readSettings();
+  const base = localConfig.companion || {};
+  if (s.companionHost) return { ...base, host: s.companionHost, port: s.companionPort || 8000 };
+  return base.host ? base : null;
+}
 
 // ── Devices store ────────────────────────────────────────────────────────────
 const DEVICES_PATH = path.join(__dirname, 'devices.json');
@@ -217,13 +232,14 @@ const server = http.createServer(async (req, res) => {
 
   // ── Companion: debug — raw fetch from Companion HTTP API ─────────────────
   if (url.pathname === '/companion/debug') {
-    if (!COMPANION_CFG) {
+    const companionCfg = getCompanionCfg();
+    if (!companionCfg) {
       res.writeHead(503, { 'Content-Type': 'application/json' });
       return res.end(JSON.stringify({ error: 'No companion config' }));
     }
     const apiPath = url.searchParams.get('path') || '/style/bank/1/1';
-    const host = COMPANION_CFG.host;
-    const port = COMPANION_CFG.port || 8000;
+    const host = companionCfg.host;
+    const port = companionCfg.port || 8000;
     const req2 = http.get({ hostname: host, port, path: apiPath, timeout: 4000 }, (r) => {
       const chunks = [];
       r.on('data', c => chunks.push(c));
@@ -267,17 +283,18 @@ const server = http.createServer(async (req, res) => {
 
   // ── Companion: press a button ─────────────────────────────────────────────
   if (url.pathname === '/companion/press') {
-    if (!COMPANION_CFG) {
+    const companionCfg = getCompanionCfg();
+    if (!companionCfg) {
       res.writeHead(503, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ ok: false, error: 'No companion config' }));
+      return res.end(JSON.stringify({ ok: false, error: 'No companion config — set Companion IP in Setup' }));
     }
     const page = parseInt(url.searchParams.get('page')) || 1;
     const row  = parseInt(url.searchParams.get('row'))  || 0;
     const col  = parseInt(url.searchParams.get('col'))  || 0;
     const pressPath = `/api/location/${page}/${row}/${col}/press`;
     const req2 = http.request({
-      hostname: COMPANION_CFG.host,
-      port: COMPANION_CFG.port || 8000,
+      hostname: companionCfg.host,
+      port: companionCfg.port || 8000,
       path: pressPath,
       method: 'POST',
       headers: { 'Content-Length': 0 },
@@ -449,6 +466,35 @@ const server = http.createServer(async (req, res) => {
     req2.on('error', e => { res.writeHead(502); res.end(JSON.stringify({ error: e.message })); });
     req2.on('timeout', () => { req2.destroy(); res.writeHead(504); res.end('Timeout'); });
     req2.end();
+    return;
+  }
+
+  // ── Settings: GET ────────────────────────────────────────────────────────
+  if (url.pathname === '/settings' && req.method === 'GET') {
+    const s = readSettings();
+    const cfg = getCompanionCfg();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ companionHost: s.companionHost || (cfg && cfg.host) || '', companionPort: s.companionPort || (cfg && cfg.port) || 8000 }));
+  }
+
+  // ── Settings: POST ───────────────────────────────────────────────────────
+  if (url.pathname === '/settings' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        const current = readSettings();
+        if (data.companionHost !== undefined) current.companionHost = String(data.companionHost).trim();
+        if (data.companionPort !== undefined) current.companionPort = parseInt(data.companionPort) || 8000;
+        writeSettings(current);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
     return;
   }
 
