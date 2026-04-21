@@ -767,17 +767,20 @@ platform | Platform | text</pre>
   }
 
   // ── Load devices from local server ───────────────────────────────────────
-  async function loadDevices() {
+  async function loadDevices(isFirstLoad) {
     try {
       const r = await fetch('/devices');
       EQUIPMENT = await r.json();
-      document.getElementById('loading-state').style.display = 'none';
       buildFilterBar();
       render();
-      pingAll();
+      if (isFirstLoad) {
+        pingAll(() => { document.getElementById('loading-state').style.display = 'none'; });
+      } else {
+        pingAll();
+      }
     } catch(e) { console.error('Failed to load devices:', e); }
   }
-  loadDevices();
+  loadDevices(true);
   setInterval(loadDevices, +(localStorage.getItem('gearops_refresh_interval') || 10000));
 
   // ── Render ───────────────────────────────────────────────────────────────
@@ -1071,9 +1074,9 @@ platform | Platform | text</pre>
 
   // ── Ping ─────────────────────────────────────────────────────────────────
   function pingDevice(d) {
-    if (!d.ip || d.appKey || !d.monitor) return;
+    if (!d.ip || d.appKey || !d.monitor) return Promise.resolve();
     const pingIp = d.ip.split(':')[0].split('/')[0];
-    fetch(`${SERVER}/ping?ip=${encodeURIComponent(pingIp)}`)
+    return fetch(`${SERVER}/ping?ip=${encodeURIComponent(pingIp)}`)
       .then(r => r.json())
       .then(data => setStatus(d.id, data.online))
       .catch(() => setStatus(d.id, false));
@@ -1108,7 +1111,10 @@ platform | Platform | text</pre>
         </span>` : '');
   }
 
-  function pingAll() { EQUIPMENT.forEach(d => pingDevice(d)); }
+  function pingAll(onComplete) {
+    const promises = EQUIPMENT.map(d => pingDevice(d)).filter(Boolean);
+    if (onComplete) Promise.all(promises).then(onComplete);
+  }
 
   // ── Companion status polling ──────────────────────────────────────────────
   let companionState = {};
