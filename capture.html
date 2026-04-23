@@ -37,6 +37,7 @@
       flex-direction: column;
       gap: 10px;
       min-height: 0;
+      overflow: hidden;
     }
     .panel-label {
       font-size: 0.75rem;
@@ -124,7 +125,7 @@
       .page { overflow: visible; }
       .split-layout { grid-template-columns: 1fr; height: auto; overflow: visible; }
       .split-panel { height: 50vw; min-height: 240px; }
-      .split-panel:last-child { height: auto; min-height: 0; }
+      .split-panel:last-child { height: auto; min-height: 0; overflow: visible; }
       .eq-status-list { overflow-y: visible; flex: none; }
     }
 
