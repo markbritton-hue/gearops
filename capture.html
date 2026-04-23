@@ -27,10 +27,14 @@
     /* Split layout */
     .split-layout {
       display: grid;
-      grid-template-columns: 2fr 1fr 220px;
+      grid-template-columns: 1fr 220px;
+      grid-template-rows: auto 1fr;
       gap: 16px;
       flex: 1;
       min-height: 0;
+    }
+    #capture-panel {
+      grid-column: 1 / -1;
     }
     .split-panel {
       display: flex;
@@ -120,10 +124,11 @@
     }
     #capture-panel.fullscreen .preview-wrap { border-radius: 0; }
 
-    @media (max-width: 900px) {
+    @media (max-width: 600px) {
       body { height: auto; overflow: auto; }
       .page { overflow: visible; }
-      .split-layout { grid-template-columns: 1fr; height: auto; overflow: visible; }
+      .split-layout { grid-template-columns: 1fr; grid-template-rows: auto; height: auto; overflow: visible; }
+      #capture-panel { grid-column: 1; }
       .split-panel { height: 50vw; min-height: 240px; }
       .split-panel:last-child { height: auto; min-height: 0; overflow: visible; }
       .eq-status-list { overflow-y: visible; flex: none; }
