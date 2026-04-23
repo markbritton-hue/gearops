@@ -117,10 +117,12 @@
       inset: 0;
       z-index: 500;
       background: #000;
-      padding: 8px;
+      padding: 0;
       border-radius: 0;
     }
-    #capture-panel.fullscreen .preview-wrap { border-radius: 0; }
+    #capture-panel.fullscreen .preview-wrap { border-radius: 0; flex: 1; }
+    #capture-panel.fullscreen .panel-label { display: none; }
+    #capture-panel.fullscreen #pinned-cards-wrap { display: none; }
 
     @media (max-width: 600px) {
       body { height: auto; overflow: auto; }
