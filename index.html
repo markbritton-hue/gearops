@@ -513,7 +513,12 @@
       </div>
       <div class="form-row">
         <label>Password</label>
-        <input type="text" id="f-pass" placeholder="••••••" />
+        <div style="position:relative;display:flex;align-items:center;">
+          <input type="password" id="f-pass" placeholder="••••••" style="padding-right:2.2rem;width:100%;" />
+          <button type="button" id="f-pass-toggle" title="Show password" style="position:absolute;right:6px;background:none;border:none;cursor:pointer;color:#8397a8;padding:2px 4px;line-height:1;">
+            <i class="fa fa-eye"></i>
+          </button>
+        </div>
       </div>
       <div class="form-row" style="grid-column:1/-1">
         <label>Notes</label>
@@ -811,6 +816,50 @@ Cut | 1 | 1 | 0</pre>
     }
   }
 
+  // ── Password reveal toggle ────────────────────────────────────────────────
+  let passHideTimer = null;
+  document.getElementById('f-pass-toggle').addEventListener('click', function () {
+    const input = document.getElementById('f-pass');
+    const icon = this.querySelector('i');
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.className = 'fa fa-eye-slash';
+      clearTimeout(passHideTimer);
+      passHideTimer = setTimeout(() => {
+        input.type = 'password';
+        icon.className = 'fa fa-eye';
+      }, 30000);
+    } else {
+      input.type = 'password';
+      icon.className = 'fa fa-eye';
+      clearTimeout(passHideTimer);
+    }
+  });
+
+  // ── Card password reveal (delegated) ─────────────────────────────────────
+  const cardPassTimers = new Map();
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('.card-pass-toggle');
+    if (!btn) return;
+    const mask = btn.previousElementSibling;
+    const icon = btn.querySelector('i');
+    const pass = mask.dataset.pass;
+    const isHidden = mask.textContent === '••••••';
+    if (isHidden) {
+      mask.textContent = pass;
+      icon.className = 'fa fa-eye-slash';
+      clearTimeout(cardPassTimers.get(btn));
+      cardPassTimers.set(btn, setTimeout(() => {
+        mask.textContent = '••••••';
+        icon.className = 'fa fa-eye';
+      }, 30000));
+    } else {
+      mask.textContent = '••••••';
+      icon.className = 'fa fa-eye';
+      clearTimeout(cardPassTimers.get(btn));
+    }
+  });
+
   // ── Load devices from local server ───────────────────────────────────────
   async function loadDevices(isFirstLoad) {
     try {
@@ -901,7 +950,7 @@ Cut | 1 | 1 | 0</pre>
         ${(d.user || d.pass) ? `
         <div class="card-meta">
           ${d.user ? `<span><i class="fa-solid fa-user" style="width:12px;"></i>${esc(d.user)}</span>` : ''}
-          ${d.pass ? `<span><i class="fa-solid fa-key" style="width:12px;"></i>${esc(d.pass)}</span>` : ''}
+          ${d.pass ? `<span style="display:inline-flex;align-items:center;gap:4px;"><i class="fa-solid fa-key" style="width:12px;"></i><span class="card-pass-mask" data-pass="${esc(d.pass)}">••••••</span><button type="button" class="card-pass-toggle" title="Show password" style="background:none;border:none;cursor:pointer;color:#8397a8;padding:0 2px;line-height:1;font-size:0.85em;"><i class="fa fa-eye"></i></button></span>` : ''}
         </div>` : ''}
         ${d.notes ? `<div class="card-notes">${esc(d.notes)}</div>` : ''}
         ${(d.companionButtons||[]).length ? `
@@ -978,6 +1027,9 @@ Cut | 1 | 1 | 0</pre>
     document.getElementById('f-apppath').value = '';
     document.getElementById('f-user').value = '';
     document.getElementById('f-pass').value = '';
+    document.getElementById('f-pass').type = 'password';
+    document.getElementById('f-pass-toggle').querySelector('i').className = 'fa fa-eye';
+    clearTimeout(passHideTimer);
     document.getElementById('f-notes').value = '';
     document.getElementById('f-monitor').checked = false;
     document.getElementById('f-browser-enabled').checked = false;
@@ -1003,6 +1055,9 @@ Cut | 1 | 1 | 0</pre>
     document.getElementById('f-apppath').value = d.appPath || '';
     document.getElementById('f-user').value = d.user || '';
     document.getElementById('f-pass').value = d.pass || '';
+    document.getElementById('f-pass').type = 'password';
+    document.getElementById('f-pass-toggle').querySelector('i').className = 'fa fa-eye';
+    clearTimeout(passHideTimer);
     document.getElementById('f-notes').value = d.notes || '';
     document.getElementById('f-monitor').checked = !!d.monitor;
     document.getElementById('f-browser-enabled').checked = !!d.browserEnabled;
