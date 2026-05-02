@@ -126,6 +126,39 @@
     </div>
   </div>
 
+  <!-- Backup / Restore -->
+  <div class="settings-card">
+    <h3><i class="fa-solid fa-box-archive" style="color:#60a5fa;"></i> Backup &amp; Restore</h3>
+    <div class="settings-row" style="align-items:flex-start;gap:16px;flex-wrap:wrap;">
+      <div class="settings-label">
+        Export Config
+        <span>Download all devices and settings as a JSON backup file</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button onclick="exportConfig()" style="background:#60a5fa;border:none;color:#0f172a;border-radius:8px;padding:8px 18px;font-size:0.85rem;font-weight:700;cursor:pointer;">
+          <i class="fa-solid fa-file-arrow-down"></i> Export
+        </button>
+      </div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.07);margin:20px 0;" />
+
+    <div class="settings-row" style="align-items:flex-start;gap:16px;flex-wrap:wrap;">
+      <div class="settings-label">
+        Import Config
+        <span>Restore from a previously exported JSON file — replaces all current devices and settings</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <label style="background:rgba(96,165,250,0.15);border:1px solid rgba(96,165,250,0.35);color:#60a5fa;border-radius:8px;padding:8px 18px;font-size:0.85rem;font-weight:700;cursor:pointer;">
+          <i class="fa-solid fa-file-arrow-up"></i> Choose File
+          <input type="file" id="import-file" accept=".json" onchange="importConfig(this)" style="display:none;" />
+        </label>
+        <span class="save-confirm" id="import-confirm"><i class="fa-solid fa-check"></i> Imported</span>
+        <span id="import-error" style="font-size:0.8rem;color:#f87171;display:none;"></span>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -158,6 +191,54 @@
       c.style.display = 'inline';
       setTimeout(() => c.style.display = 'none', 2000);
     }).catch(e => alert('Failed to save: ' + e.message));
+  }
+
+  const LS_KEYS = ['gearops_refresh_interval', 'swp-view', 'swp-browser-url', 'swp-capture-device'];
+
+  async function exportConfig() {
+    const [devicesRes, settingsRes] = await Promise.all([fetch('/devices'), fetch('/settings')]);
+    const devices  = await devicesRes.json();
+    const settings = await settingsRes.json();
+    const lsData = {};
+    for (const k of LS_KEYS) { const v = localStorage.getItem(k); if (v !== null) lsData[k] = v; }
+    const bundle = { version: 1, exported: new Date().toISOString(), devices, settings, localStorage: lsData };
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `gearops-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  async function importConfig(input) {
+    const errEl = document.getElementById('import-error');
+    const okEl  = document.getElementById('import-confirm');
+    errEl.style.display = 'none';
+    okEl.style.display  = 'none';
+    const file = input.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const bundle = JSON.parse(text);
+      if (!bundle.devices || !Array.isArray(bundle.devices)) throw new Error('Invalid backup file — missing devices array');
+      await fetch('/devices', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bundle.devices) });
+      if (bundle.settings) {
+        await fetch('/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bundle.settings) });
+        if (bundle.settings.companionHost) document.getElementById('companion-ip').value   = bundle.settings.companionHost;
+        if (bundle.settings.companionPort) document.getElementById('companion-port').value = bundle.settings.companionPort;
+      }
+      if (bundle.localStorage) {
+        for (const k of LS_KEYS) { if (bundle.localStorage[k] !== undefined) localStorage.setItem(k, bundle.localStorage[k]); }
+        const ri = bundle.localStorage['gearops_refresh_interval'];
+        if (ri && sel.querySelector(`option[value="${ri}"]`)) sel.value = ri;
+      }
+      okEl.style.display = 'inline';
+      setTimeout(() => { okEl.style.display = 'none'; input.value = ''; }, 3000);
+    } catch (e) {
+      errEl.textContent = e.message;
+      errEl.style.display = 'inline';
+      input.value = '';
+    }
   }
 </script>
 

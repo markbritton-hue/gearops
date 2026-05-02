@@ -1160,17 +1160,14 @@ Cut | 1 | 1 | 0</pre>
 
   async function confirmDelete() {
     if (!pendingDeleteId) return;
-    const btn = document.getElementById('btn-confirm-delete');
-    btn.disabled = true;
+    const id = pendingDeleteId;
+    pendingDeleteId = null;
+    closeModal('delete-modal');
     try {
-      await fetch('/devices/' + pendingDeleteId, { method: 'DELETE' });
+      await fetch('/devices/' + id, { method: 'DELETE' });
       await loadDevices();
-      closeModal('delete-modal');
     } catch (err) {
       alert('Delete failed: ' + err.message);
-    } finally {
-      btn.disabled = false;
-      pendingDeleteId = null;
     }
   }
 

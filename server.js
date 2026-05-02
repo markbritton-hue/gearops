@@ -527,6 +527,25 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ── Devices: PUT all (bulk replace) ──────────────────────────────────────
+  if (url.pathname === '/devices' && req.method === 'PUT') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const arr = JSON.parse(body);
+        if (!Array.isArray(arr)) throw new Error('Expected array');
+        writeDevices(arr);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, count: arr.length }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
   // ── Devices: PUT (update) ─────────────────────────────────────────────────
   const putMatch = url.pathname.match(/^\/devices\/(.+)$/);
   if (putMatch && req.method === 'PUT') {
