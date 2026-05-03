@@ -60,13 +60,12 @@
       font-size: 0.8rem;
       font-weight: 600;
       cursor: pointer;
-      display: none;
+      display: flex;
       align-items: center;
       gap: 6px;
       transition: background 0.2s;
     }
     .btn-add-device:hover { background: rgba(74,222,128,0.25); }
-    .btn-add-device.visible { display: flex; }
 
     /* ── SEARCH ── */
     .search-bar { padding: 16px 20px 0; }
@@ -1010,7 +1009,7 @@ Cut | 1 | 1 | 0</pre>
     btn.innerHTML = editMode
       ? '<i class="fa-solid fa-check"></i> Done'
       : '<i class="fa-solid fa-pen-to-square"></i> Edit';
-    addBtn.classList.toggle('visible', editMode);
+    // Add button always visible — not tied to edit mode
     grid.classList.toggle('edit-mode', editMode);
   }
 
