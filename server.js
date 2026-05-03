@@ -210,24 +210,31 @@ const server = http.createServer(async (req, res) => {
 
     if (ffmpegProcess) { try { ffmpegProcess.kill(); } catch(e) {} ffmpegProcess = null; }
 
-    // Launch FFmpeg in its own console via `start` — DirectShow requires a real Windows session
-    const cmd = `start "FFmpeg Capture" "${FFMPEG}" -rtbufsize 512M -f dshow -i "video=${device}" -vf scale=1280:-1 -q:v 3 -update 1 -r 25 -y "${FRAME_PATH}"`;
+    // Respond immediately before launching — exec with `start` on Windows keeps the
+    // child stdio open, which prevents Node from flushing the response until the
+    // cmd.exe wrapper exits (which it never does while FFmpeg runs).
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ started: true }));
+
+    // `start` gives FFmpeg a real Windows console — required for DirectShow capture
+    const cmd = `start "FFmpeg Capture" "${FFMPEG}" -rtbufsize 512M -f dshow -i "video=${device}" -vf scale=1280:-1 -q:v 3 -update 1 -r 20 -y "${FRAME_PATH}"`;
     const proc = exec(cmd, (err) => {
       if (err) console.error('FFmpeg launch error:', err.message);
     });
     ffmpegProcess = proc;
-
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ started: true }));
     return;
   }
 
   // ── FFmpeg: latest frame ──────────────────────────────────────────────────
   if (url.pathname === '/ffmpeg/frame') {
     if (!fs.existsSync(FRAME_PATH)) { res.writeHead(204); return res.end(); }
-    const data = fs.readFileSync(FRAME_PATH);
-    res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Cache-Control': 'no-store' });
-    res.end(data);
+    try {
+      const data = fs.readFileSync(FRAME_PATH);
+      res.writeHead(200, { 'Content-Type': 'image/jpeg', 'Cache-Control': 'no-store' });
+      res.end(data);
+    } catch {
+      res.writeHead(204); res.end(); // file locked by FFmpeg write — skip this frame
+    }
     return;
   }
 
