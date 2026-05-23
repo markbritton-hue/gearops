@@ -217,6 +217,53 @@
 
     .status-dot { display: none; }
 
+    /* ── PING INDICATOR ── */
+    .ping-indicator {
+      display: flex; align-items: center; gap: 9px;
+      background: rgba(15,23,42,0.6);
+      border: 1px solid rgba(96,165,250,0.18);
+      border-radius: 20px;
+      padding: 5px 13px 5px 10px;
+      font-size: 0.75rem; font-weight: 600; color: #8397a8;
+      user-select: none;
+    }
+    .ping-dot-wrap {
+      position: relative; width: 14px; height: 14px; flex-shrink: 0;
+    }
+    .ping-dot {
+      position: absolute; inset: 50%; transform: translate(-50%,-50%);
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #22c55e;
+      transition: background 0.4s;
+    }
+    .ping-dot.offline-dot { background: #ef4444; }
+    .ping-ring {
+      position: absolute; inset: 50%; transform: translate(-50%,-50%);
+      width: 8px; height: 8px; border-radius: 50%;
+      border: 2px solid #22c55e;
+      opacity: 0;
+      transition: border-color 0.4s;
+    }
+    .ping-ring.offline-ring { border-color: #ef4444; }
+    .ping-indicator.pinging .ping-ring {
+      animation: ping-ripple 1.4s ease-out infinite;
+    }
+    .ping-indicator.pinging .ping-dot {
+      animation: ping-pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes ping-ripple {
+      0%   { width: 8px; height: 8px; opacity: 0.75; }
+      100% { width: 26px; height: 26px; opacity: 0; }
+    }
+    @keyframes ping-pulse {
+      0%, 100% { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+      50%       { transform: translate(-50%,-50%) scale(0.75); opacity: 0.7; }
+    }
+    .ping-counts { display: flex; align-items: center; gap: 6px; }
+    .ping-count-on  { color: #22c55e; }
+    .ping-count-off { color: #f87171; }
+    .ping-sep { color: rgba(255,255,255,0.2); }
+
     .status-badge {
       display: inline-flex; align-items: center; gap: 5px;
       font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
@@ -367,9 +414,16 @@
 <nav class="top-nav">
   <img src="Gearops-trans2.png" alt="GearOps" style="height:56px;width:auto;" />
   <span class="subtitle" id="device-count"></span>
-  <span id="nav-loading" style="display:flex;align-items:center;gap:7px;font-size:0.78rem;color:#60a5fa;font-weight:600;">
-    <i class="fa-solid fa-satellite-dish" style="animation:spin 1.5s linear infinite;"></i> Checking equipment...
-  </span>
+  <!-- Ping indicator -->
+  <div class="ping-indicator pinging" id="ping-indicator" title="Device ping status">
+    <div class="ping-dot-wrap">
+      <div class="ping-ring" id="ping-ring"></div>
+      <div class="ping-dot" id="ping-dot"></div>
+    </div>
+    <div class="ping-counts" id="ping-counts">
+      <span id="nav-loading" style="color:#60a5fa;font-size:0.75rem;">Checking…</span>
+    </div>
+  </div>
   <a href="/capture.html" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:8px;padding:6px 14px;font-size:0.8rem;font-weight:600;text-decoration:none;display:flex;align-items:center;gap:6px;">
     <img src="control-room.svg" alt="" style="height:18px;width:auto;filter:invert(65%) sepia(80%) saturate(600%) hue-rotate(340deg) brightness(1.1);" /> Control Room
   </a>
@@ -1219,11 +1273,33 @@ Cut | 1 | 1 | 0</pre>
         <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;border-radius:12px;padding:2px 10px;font-size:0.75rem;font-weight:700;">
           <span style="width:7px;height:7px;border-radius:50%;background:#f87171;display:inline-block;"></span>${offlineCount} offline
         </span>` : '');
+    // Update ping indicator
+    const counts = document.getElementById('ping-counts');
+    const dot    = document.getElementById('ping-dot');
+    const ring   = document.getElementById('ping-ring');
+    if (counts && monitored.length) {
+      const anyOffline = offlineCount > 0;
+      counts.innerHTML = `<span class="ping-count-on">${onlineCount}</span><span class="ping-sep">/</span><span class="ping-count-off">${offlineCount}</span>`;
+      dot.classList.toggle('offline-dot', anyOffline);
+      ring.classList.toggle('offline-ring', anyOffline);
+    }
   }
 
   function pingAll(onComplete) {
+    const indicator = document.getElementById('ping-indicator');
+    // Start ripple animation
+    if (indicator) indicator.classList.add('pinging');
     const promises = EQUIPMENT.map(d => pingDevice(d)).filter(Boolean);
-    if (onComplete) Promise.all(promises).then(onComplete);
+    const done = () => {
+      // Keep gentle idle pulse (remove strong pinging class after a beat)
+      setTimeout(() => { if (indicator) indicator.classList.remove('pinging'); }, 800);
+      if (onComplete) onComplete();
+      // Hide "Checking…" text once first ping completes
+      const nav = document.getElementById('nav-loading');
+      if (nav) nav.style.display = 'none';
+    };
+    if (promises.length) Promise.all(promises).then(done);
+    else { done(); }
   }
 
   // ── Companion status polling ──────────────────────────────────────────────
