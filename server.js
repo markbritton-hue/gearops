@@ -217,7 +217,7 @@ const server = http.createServer(async (req, res) => {
     res.end(JSON.stringify({ started: true }));
 
     // `start` gives FFmpeg a real Windows console — required for DirectShow capture
-    const cmd = `start "FFmpeg Capture" "${FFMPEG}" -rtbufsize 512M -f dshow -i "video=${device}" -vf scale=1280:-1 -q:v 3 -update 1 -r 20 -y "${FRAME_PATH}"`;
+    const cmd = `start "FFmpeg Capture" "${FFMPEG}" -rtbufsize 512M -f dshow -video_size 1920x1080 -i "video=${device}" -vf scale=1280:-1 -q:v 3 -update 1 -r 20 -y "${FRAME_PATH}"`;
     const proc = exec(cmd, (err) => {
       if (err) console.error('FFmpeg launch error:', err.message);
     });
