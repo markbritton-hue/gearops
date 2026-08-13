@@ -574,6 +574,10 @@
           </button>
         </div>
       </div>
+      <div class="form-row">
+        <label>Serial Number</label>
+        <input type="text" id="f-serial" placeholder="e.g. SN-123456" />
+      </div>
       <div class="form-row" style="grid-column:1/-1">
         <label>Notes</label>
         <textarea id="f-notes" placeholder="Any extra info..."></textarea>
@@ -941,7 +945,7 @@ Cut | 1 | 1 | 0</pre>
 
     const filtered = EQUIPMENT.filter(d => {
       const catMatch = q || activeCategory === 'all' || d.category === activeCategory;
-      const searchMatch = !q || d.name.toLowerCase().includes(q) || (d.ip||'').includes(q) || (d.notes||'').toLowerCase().includes(q);
+      const searchMatch = !q || d.name.toLowerCase().includes(q) || (d.ip||'').includes(q) || (d.notes||'').toLowerCase().includes(q) || (d.serial||'').toLowerCase().includes(q);
       return catMatch && searchMatch;
     }).sort((a, b) => {
       if (sortBy === 'name')     return a.name.localeCompare(b.name);
@@ -1001,10 +1005,11 @@ Cut | 1 | 1 | 0</pre>
           ${d.monitor && hasIp ? `<span class="status-badge ${onlineStatus[d.id] === true ? 'online' : onlineStatus[d.id] === false ? 'offline' : ''}" id="status-${d.id}">${onlineStatus[d.id] === true ? 'Online' : onlineStatus[d.id] === false ? 'Offline' : 'Checking...'}</span>` : ''}
           <span>${hasIp ? esc(d.ip) : (d.appKey||d.appPath) ? '<span class="no-ip">Local application</span>' : '<span class="no-ip">No IP assigned</span>'}</span>
         </div>
-        ${(d.user || d.pass) ? `
+        ${(d.user || d.pass || d.serial) ? `
         <div class="card-meta">
           ${d.user ? `<span><i class="fa-solid fa-user" style="width:12px;"></i>${esc(d.user)}</span>` : ''}
           ${d.pass ? `<span style="display:inline-flex;align-items:center;gap:4px;"><i class="fa-solid fa-key" style="width:12px;"></i><span class="card-pass-mask" data-pass="${esc(d.pass)}">••••••</span><button type="button" class="card-pass-toggle" title="Show password" style="background:none;border:none;cursor:pointer;color:#8397a8;padding:0 2px;line-height:1;font-size:0.85em;"><i class="fa fa-eye"></i></button></span>` : ''}
+          ${d.serial ? `<span><i class="fa-solid fa-barcode" style="width:12px;"></i>${esc(d.serial)}</span>` : ''}
         </div>` : ''}
         ${d.notes ? `<div class="card-notes">${esc(d.notes)}</div>` : ''}
         ${(d.companionButtons||[]).length ? `
@@ -1084,6 +1089,7 @@ Cut | 1 | 1 | 0</pre>
     document.getElementById('f-pass').type = 'password';
     document.getElementById('f-pass-toggle').querySelector('i').className = 'fa fa-eye';
     clearTimeout(passHideTimer);
+    document.getElementById('f-serial').value = '';
     document.getElementById('f-notes').value = '';
     document.getElementById('f-monitor').checked = false;
     document.getElementById('f-browser-enabled').checked = false;
@@ -1112,6 +1118,7 @@ Cut | 1 | 1 | 0</pre>
     document.getElementById('f-pass').type = 'password';
     document.getElementById('f-pass-toggle').querySelector('i').className = 'fa fa-eye';
     clearTimeout(passHideTimer);
+    document.getElementById('f-serial').value = d.serial || '';
     document.getElementById('f-notes').value = d.notes || '';
     document.getElementById('f-monitor').checked = !!d.monitor;
     document.getElementById('f-browser-enabled').checked = !!d.browserEnabled;
@@ -1139,6 +1146,7 @@ Cut | 1 | 1 | 0</pre>
       appPath:  document.getElementById('f-apppath').value.trim(),
       user:     document.getElementById('f-user').value.trim(),
       pass:     document.getElementById('f-pass').value.trim(),
+      serial:   document.getElementById('f-serial').value.trim(),
       notes:    document.getElementById('f-notes').value.trim(),
       monitor:           document.getElementById('f-monitor').checked,
       browserEnabled:    document.getElementById('f-browser-enabled').checked,
