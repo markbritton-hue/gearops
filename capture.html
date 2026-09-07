@@ -416,6 +416,8 @@
         <div class="ptz-col">
           <label>PTZ Camera</label>
           <select id="ptz-select" title="Which camera to control"></select>
+          <a id="ptz-weblink" href="#" target="_blank" rel="noopener"
+             style="font-size:0.72rem;color:#5eead4;text-decoration:none;align-self:flex-start;display:flex;align-items:center;gap:5px;"><i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.65rem;"></i> <span id="ptz-weblink-ip">camera web page</span></a>
         </div>
         <div class="ptz-col ptz-speed">
           <label>Speed <span id="ptz-speed-val">12</span></label>
@@ -1293,8 +1295,16 @@
     const saved = localStorage.getItem('gearops_ptz_cam');
     ptzSelect.innerHTML = list.map(c => `<option value="${c.ip}">${esc(c.name)}</option>`).join('');
     if (saved && list.some(c => c.ip === saved)) ptzSelect.value = saved;
-    ptzSelect.onchange = () => { localStorage.setItem('gearops_ptz_cam', ptzSelect.value); ptzOk(); };
+    ptzSelect.onchange = () => { localStorage.setItem('gearops_ptz_cam', ptzSelect.value); ptzOk(); updatePtzWebLink(); };
+    updatePtzWebLink();
     ptzBar.classList.remove('hidden');
+  }
+
+  function updatePtzWebLink() {
+    const link = document.getElementById('ptz-weblink');
+    const ip = ptzSelect.value;
+    if (ip) { link.href = 'http://' + ip; document.getElementById('ptz-weblink-ip').textContent = ip; link.style.display = 'flex'; }
+    else { link.style.display = 'none'; }
   }
   initPtzBar();
 </script>
