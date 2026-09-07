@@ -6,7 +6,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { Atem, listVisibleInputs } = require('atem-connection');
+const { Atem, Enums } = require('atem-connection');
 
 const DEVICES_PATH = path.join(__dirname, 'devices.json');
 
@@ -56,15 +56,23 @@ function require_(ip) {
   return rec;
 }
 
-function inputList(state, me) {
-  const ids = new Set([
-    ...listVisibleInputs('program', state, me),
-    ...listVisibleInputs('preview', state, me),
-  ]);
-  return [...ids].sort((a, b) => a - b).map(id => {
-    const inp = state.inputs[id] || {};
-    return { id, label: inp.longName || inp.shortName || `Input ${id}` };
-  });
+function inputList(state) {
+  // Every source the ATEM knows about, with the names set in ATEM Software
+  // Control. internalPortType 0 = External = a physical SDI/HDMI input
+  // (a camera), vs. black, colour bars, media players, SuperSource, MEs, etc.
+  return Object.keys(state.inputs || {})
+    .map(Number)
+    .filter(id => id > 0 && id < 1000)          // drop ME outputs / aux / multiviewer pseudo-ids
+    .sort((a, b) => a - b)
+    .map(id => {
+      const inp = state.inputs[id] || {};
+      return {
+        id,
+        label: inp.longName || inp.shortName || `Input ${id}`,
+        short: inp.shortName || inp.longName || `In${id}`,
+        isCamera: inp.internalPortType === Enums.InternalPortType.External,
+      };
+    });
 }
 
 function summary(rec) {
@@ -81,7 +89,7 @@ function summary(rec) {
     ...base,
     model: state.info && state.info.productIdentifier || null,
     mixEffects: mes,
-    inputs: inputList(state, 0),
+    inputs: inputList(state),
   };
 }
 

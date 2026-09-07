@@ -1076,7 +1076,8 @@
     .catch(e => console.error('Failed to load devices:', e));
 
   // ── ATEM camera switching bar ────────────────────────────────────────────
-  const CAM_INPUTS = [1, 2, 3, 4];
+  const CAM_FALLBACK = [1, 2, 3, 4];   // used only if the ATEM reports no camera inputs
+  const CAM_MAX_BUTTONS = 12;
   const camBar    = document.getElementById('cam-bar');
   const camSelect = document.getElementById('cam-atem-select');
   const camBtns   = document.getElementById('cam-btns');
@@ -1087,9 +1088,14 @@
   camAuto.checked = localStorage.getItem('gearops_cam_auto') === '1';
   camAuto.onchange = () => localStorage.setItem('gearops_cam_auto', camAuto.checked ? '1' : '0');
 
-  function camLabelFor(atem, n) {
-    const inp = (atem.inputs || []).find(i => i.id === n);
-    return inp ? inp.label : 'CAM ' + n;
+  // Camera inputs come from the ATEM itself: state.inputs carries the source
+  // names set in ATEM Software Control, and isCamera marks physical inputs.
+  function camInputsFor(atem) {
+    const all = atem.inputs || [];
+    let cams = all.filter(i => i.isCamera && !/multiview|clean|^pgm|^pvw|program|preview/i.test(i.label));
+    if (!cams.length) cams = all.filter(i => CAM_FALLBACK.includes(i.id));
+    if (!cams.length) cams = CAM_FALLBACK.map(id => ({ id, label: 'CAM ' + id }));
+    return cams.slice(0, CAM_MAX_BUTTONS);
   }
 
   function paintCamButtons(atem) {
@@ -1103,12 +1109,13 @@
 
   function renderCamButtons(atem) {
     camBtns.innerHTML = '';
-    CAM_INPUTS.forEach(n => {
+    camInputsFor(atem).forEach(inp => {
       const btn = document.createElement('button');
       btn.className = 'cam-btn';
-      btn.dataset.input = n;
-      btn.textContent = camLabelFor(atem, n);
-      btn.onclick = () => switchCam(n, btn);
+      btn.dataset.input = inp.id;
+      btn.textContent = inp.label || ('CAM ' + inp.id);
+      btn.title = `Input ${inp.id}`;
+      btn.onclick = () => switchCam(inp.id, btn);
       camBtns.appendChild(btn);
     });
     paintCamButtons(atem);
@@ -1134,12 +1141,16 @@
     }
   }
 
+  let camInputSig = '';
   async function refreshCam() {
     const ip = camSelect.value;
     if (!ip) return;
     try {
       const atem = await gear.atemState(ip);
-      paintCamButtons(atem);
+      // Rebuild the buttons if the ATEM's camera list or names changed
+      const sig = camInputsFor(atem).map(i => i.id + ':' + i.label).join('|');
+      if (sig !== camInputSig) { camInputSig = sig; renderCamButtons(atem); }
+      else paintCamButtons(atem);
       camErr.textContent = atem.connected ? '' : 'ATEM offline';
     } catch (e) {
       camErr.textContent = e.message;
@@ -1152,6 +1163,7 @@
     camErr.textContent = '';
     try {
       const atem = await gear.atemState(ip);
+      camInputSig = camInputsFor(atem).map(i => i.id + ':' + i.label).join('|');
       renderCamButtons(atem);
     } catch (e) {
       camErr.textContent = e.message;
