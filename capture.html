@@ -290,6 +290,34 @@
     .cam-auto { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #94a3b8; cursor: pointer; user-select: none; white-space: nowrap; }
     .cam-err { font-size: 0.72rem; color: #f87171; }
 
+    /* PTZ control panel */
+    .ptz-bar { display: flex; align-items: stretch; gap: 14px; flex-wrap: wrap; background: rgba(30,41,59,0.8); border: 1px solid rgba(52,211,153,0.2); border-radius: 10px; padding: 10px; }
+    .ptz-bar.hidden { display: none; }
+    .ptz-col { display: flex; flex-direction: column; gap: 6px; }
+    .ptz-col > label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #8397a8; }
+    .ptz-bar select { background: rgba(15,23,42,0.7); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; color: #e2e8f0; padding: 6px 10px; font-size: 0.8rem; outline: none; cursor: pointer; }
+    .ptz-bar select option { background: #1e293b; }
+    .ptz-pad { display: grid; grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 40px); gap: 4px; }
+    .ptz-pad button, .ptz-zoom button, .ptz-preset button, .ptz-misc button {
+      border: 1px solid rgba(255,255,255,0.12); background: rgba(15,23,42,0.6); color: #cbd5e1;
+      border-radius: 7px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700; user-select: none; -webkit-user-select: none; touch-action: none;
+    }
+    .ptz-pad button:hover, .ptz-zoom button:hover, .ptz-preset button:hover, .ptz-misc button:hover { background: rgba(52,211,153,0.18); border-color: rgba(52,211,153,0.4); }
+    .ptz-pad button:active, .ptz-pad button.holding { background: #34d399; border-color: #34d399; color: #0f172a; }
+    .ptz-pad .ptz-center { color: #64748b; font-size: 0.7rem; }
+    .ptz-zoom { display: flex; flex-direction: column; gap: 4px; }
+    .ptz-zoom button { width: 44px; height: 40px; }
+    .ptz-zoom button:active, .ptz-zoom button.holding { background: #34d399; border-color: #34d399; color: #0f172a; }
+    .ptz-preset { display: grid; grid-template-columns: repeat(3, 38px); grid-auto-rows: 32px; gap: 4px; }
+    .ptz-preset button.armed { background: rgba(239,68,68,0.25); border-color: #ef4444; color: #fecaca; }
+    .ptz-misc { display: flex; flex-direction: column; gap: 4px; justify-content: flex-start; }
+    .ptz-misc button { height: 32px; padding: 0 10px; gap: 5px; }
+    .ptz-misc button.setmode { background: rgba(239,68,68,0.2); border-color: rgba(239,68,68,0.4); color: #f87171; }
+    .ptz-speed { display: flex; flex-direction: column; gap: 4px; min-width: 110px; }
+    .ptz-speed input { width: 100%; }
+    .ptz-err { font-size: 0.72rem; color: #f87171; align-self: center; }
+
     .status-bar { margin-top: 12px; font-size: 0.8rem; color: #8397a8; min-height: 20px; }
     .status-bar.err { color: #f87171; }
     .status-bar.ok  { color: #4ade80; }
@@ -376,6 +404,45 @@
           <input type="checkbox" id="cam-auto-toggle" /> Auto
         </label>
         <span class="cam-err" id="cam-err"></span>
+      </div>
+
+      <div class="ptz-bar hidden" id="ptz-bar">
+        <div class="ptz-col">
+          <label>PTZ Camera</label>
+          <select id="ptz-select" title="Which camera to control"></select>
+          <div class="ptz-speed">
+            <label style="font-size:0.62rem;color:#8397a8;">Speed <span id="ptz-speed-val">12</span></label>
+            <input type="range" id="ptz-speed" min="1" max="24" value="12" />
+          </div>
+        </div>
+        <div class="ptz-col">
+          <label>Pan / Tilt</label>
+          <div class="ptz-pad" id="ptz-pad">
+            <button data-dir="leftup">↖</button><button data-dir="up">↑</button><button data-dir="rightup">↗</button>
+            <button data-dir="left">←</button><button class="ptz-center" data-dir="home" title="Home">⌂</button><button data-dir="right">→</button>
+            <button data-dir="leftdown">↙</button><button data-dir="down">↓</button><button data-dir="rightdown">↘</button>
+          </div>
+        </div>
+        <div class="ptz-col">
+          <label>Zoom</label>
+          <div class="ptz-zoom">
+            <button data-zoom="in" title="Zoom in"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+            <button data-zoom="out" title="Zoom out"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+          </div>
+        </div>
+        <div class="ptz-col">
+          <label>Presets</label>
+          <div class="ptz-preset" id="ptz-preset">
+            <button data-preset="1">1</button><button data-preset="2">2</button><button data-preset="3">3</button>
+            <button data-preset="4">4</button><button data-preset="5">5</button><button data-preset="6">6</button>
+          </div>
+        </div>
+        <div class="ptz-col ptz-misc">
+          <label>&nbsp;</label>
+          <button id="ptz-setmode"><i class="fa-solid fa-floppy-disk"></i> Save mode</button>
+          <button id="ptz-focus-auto"><i class="fa-solid fa-bullseye"></i> Auto focus</button>
+          <span class="ptz-err" id="ptz-err"></span>
+        </div>
       </div>
 
       <div id="pinned-cards-wrap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;overflow:visible;align-content:start;"></div>
@@ -1096,6 +1163,99 @@
 
   initCamBar();
   setInterval(() => { if (camBar.classList.contains('hidden')) initCamBar(); }, 15000);
+
+  // ── PTZ camera control ───────────────────────────────────────────────────
+  const ptzBar    = document.getElementById('ptz-bar');
+  const ptzSelect = document.getElementById('ptz-select');
+  const ptzErr    = document.getElementById('ptz-err');
+  const ptzSpeedEl = document.getElementById('ptz-speed');
+  const ptzSpeedVal = document.getElementById('ptz-speed-val');
+  let ptzSetMode = false;
+  let ptzMoving = false;
+
+  ptzSpeedEl.value = localStorage.getItem('gearops_ptz_speed') || '12';
+  ptzSpeedVal.textContent = ptzSpeedEl.value;
+  ptzSpeedEl.oninput = () => {
+    ptzSpeedVal.textContent = ptzSpeedEl.value;
+    localStorage.setItem('gearops_ptz_speed', ptzSpeedEl.value);
+  };
+
+  const ptzIp = () => ptzSelect.value;
+  function ptzFail(e) { ptzErr.textContent = e && e.message ? e.message : String(e); }
+  function ptzOk() { ptzErr.textContent = ''; }
+
+  async function ptzDo(fn) {
+    if (!ptzIp()) return;
+    try { await fn(ptzIp()); ptzOk(); } catch (e) { ptzFail(e); }
+  }
+
+  // Pan/tilt — press and hold
+  const ptzPad = document.getElementById('ptz-pad');
+  ptzPad.querySelectorAll('button').forEach(btn => {
+    const dir = btn.dataset.dir;
+    if (dir === 'home') { btn.onclick = () => ptzDo(ip => gear.ptzHome(ip)); return; }
+    const start = (e) => {
+      e.preventDefault();
+      if (!ptzIp() || ptzMoving) return;
+      ptzMoving = true;
+      btn.classList.add('holding');
+      ptzDo(ip => gear.ptzMove(ip, dir, ptzSpeedEl.value));
+    };
+    const end = () => {
+      if (!ptzMoving) return;
+      ptzMoving = false;
+      btn.classList.remove('holding');
+      ptzDo(ip => gear.ptzStop(ip));
+    };
+    btn.addEventListener('pointerdown', start);
+    btn.addEventListener('pointerup', end);
+    btn.addEventListener('pointerleave', end);
+    btn.addEventListener('pointercancel', end);
+  });
+
+  // Zoom — press and hold
+  document.querySelectorAll('.ptz-zoom button').forEach(btn => {
+    const z = btn.dataset.zoom;
+    const start = (e) => { e.preventDefault(); btn.classList.add('holding'); ptzDo(ip => gear.ptzZoom(ip, z)); };
+    const end = () => { btn.classList.remove('holding'); ptzDo(ip => gear.ptzZoom(ip, 'stop')); };
+    btn.addEventListener('pointerdown', start);
+    btn.addEventListener('pointerup', end);
+    btn.addEventListener('pointerleave', end);
+    btn.addEventListener('pointercancel', end);
+  });
+
+  // Presets — tap to recall, or save when Save mode is armed
+  document.getElementById('ptz-preset').querySelectorAll('button').forEach(btn => {
+    btn.onclick = () => {
+      const n = btn.dataset.preset;
+      if (ptzSetMode) {
+        ptzDo(ip => gear.ptzPreset(ip, 'set', n));
+        togglePtzSetMode(false);
+      } else {
+        ptzDo(ip => gear.ptzPreset(ip, 'call', n));
+      }
+    };
+  });
+
+  function togglePtzSetMode(on) {
+    ptzSetMode = on !== undefined ? on : !ptzSetMode;
+    document.getElementById('ptz-setmode').classList.toggle('setmode', ptzSetMode);
+    document.querySelectorAll('#ptz-preset button').forEach(b => b.classList.toggle('armed', ptzSetMode));
+  }
+  document.getElementById('ptz-setmode').onclick = () => togglePtzSetMode();
+  document.getElementById('ptz-focus-auto').onclick = () => ptzDo(ip => gear.ptzFocus(ip, 'auto'));
+
+  async function initPtzBar() {
+    let list = [];
+    try { list = await gear.ptzList(); } catch { list = []; }
+    if (!list.length) { ptzBar.classList.add('hidden'); return; }
+    const saved = localStorage.getItem('gearops_ptz_cam');
+    ptzSelect.innerHTML = list.map(c => `<option value="${c.ip}">${esc(c.name)}</option>`).join('');
+    if (saved && list.some(c => c.ip === saved)) ptzSelect.value = saved;
+    ptzSelect.onchange = () => { localStorage.setItem('gearops_ptz_cam', ptzSelect.value); ptzOk(); };
+    ptzBar.classList.remove('hidden');
+  }
+  initPtzBar();
 </script>
 </body>
 </html>

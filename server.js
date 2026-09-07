@@ -8,6 +8,7 @@ const { randomUUID } = require('crypto');
 const atemBridge = require('./atem-bridge');
 const hyperdeckBridge = require('./hyperdeck-bridge');
 const webpresenterBridge = require('./webpresenter-bridge');
+const ptzBridge = require('./ptz-bridge');
 
 const localConfig = (() => {
   try { return require('./local.config.js'); }
@@ -651,6 +652,24 @@ const server = http.createServer(async (req, res) => {
         return json(400, { ok: false, error: 'on must be true or false' });
       }
       return json(404, { ok: false, error: 'unknown webpresenter endpoint' });
+    } catch (e) { return json(502, { ok: false, error: String(e && e.message || e) }); }
+  }
+
+  // ── PTZ camera control (HTTP-CGI, see ptz-bridge.js) ─────────────────────
+  if (url.pathname.startsWith('/ptz')) {
+    const isLocalIp = ip => /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)\d{1,3}\.\d{1,3}$/.test(ip);
+    const json = (code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
+    try {
+      if (url.pathname === '/ptz' || url.pathname === '/ptz/list') return json(200, ptzBridge.list());
+      const ip = url.searchParams.get('ip') || '';
+      if (!isLocalIp(ip)) return json(400, { ok: false, error: 'missing or invalid local ip' });
+      if (url.pathname === '/ptz/move')   { await ptzBridge.move(ip, url.searchParams.get('dir'), url.searchParams.get('speed')); return json(200, { ok: true }); }
+      if (url.pathname === '/ptz/stop')   { await ptzBridge.stop(ip); return json(200, { ok: true }); }
+      if (url.pathname === '/ptz/zoom')   { await ptzBridge.zoom(ip, url.searchParams.get('dir')); return json(200, { ok: true }); }
+      if (url.pathname === '/ptz/focus')  { await ptzBridge.focus(ip, url.searchParams.get('dir')); return json(200, { ok: true }); }
+      if (url.pathname === '/ptz/home')   { await ptzBridge.home(ip); return json(200, { ok: true }); }
+      if (url.pathname === '/ptz/preset') { await ptzBridge.preset(ip, url.searchParams.get('action'), url.searchParams.get('n')); return json(200, { ok: true }); }
+      return json(404, { ok: false, error: 'unknown ptz endpoint' });
     } catch (e) { return json(502, { ok: false, error: String(e && e.message || e) }); }
   }
 
