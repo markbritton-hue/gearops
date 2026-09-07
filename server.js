@@ -5,6 +5,9 @@ const path = require('path');
 const { exec, spawn } = require('child_process');
 const { URL } = require('url');
 const { randomUUID } = require('crypto');
+const atemBridge = require('./atem-bridge');
+const hyperdeckBridge = require('./hyperdeck-bridge');
+const webpresenterBridge = require('./webpresenter-bridge');
 
 const localConfig = (() => {
   try { return require('./local.config.js'); }
@@ -587,6 +590,70 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ deleted: true }));
   }
 
+  // ── ATEM control (persistent connections, see atem-bridge.js) ─────────────
+  if (url.pathname.startsWith('/atem')) {
+    const isLocalIp = ip => /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)\d{1,3}\.\d{1,3}$/.test(ip);
+    const json = (code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
+    try {
+      if (url.pathname === '/atem' || url.pathname === '/atem/list') {
+        return json(200, atemBridge.list());
+      }
+      const ip = url.searchParams.get('ip') || '';
+      if (!isLocalIp(ip)) return json(400, { ok: false, error: 'missing or invalid local ip' });
+      const me = parseInt(url.searchParams.get('me')) || 0;
+
+      if (url.pathname === '/atem/state') return json(200, atemBridge.state(ip));
+
+      if (url.pathname === '/atem/program' || url.pathname === '/atem/preview') {
+        const input = parseInt(url.searchParams.get('input'));
+        if (!Number.isFinite(input)) return json(400, { ok: false, error: 'missing input' });
+        const fn = url.pathname.endsWith('program') ? atemBridge.program : atemBridge.preview;
+        await fn(ip, input, me);
+        return json(200, { ok: true });
+      }
+      if (url.pathname === '/atem/cut')  { await atemBridge.cut(ip, me);  return json(200, { ok: true }); }
+      if (url.pathname === '/atem/auto') { await atemBridge.auto(ip, me); return json(200, { ok: true }); }
+      return json(404, { ok: false, error: 'unknown atem endpoint' });
+    } catch (e) {
+      return json(502, { ok: false, error: String(e && e.message || e) });
+    }
+  }
+
+  // ── HyperDeck control (persistent connections, see hyperdeck-bridge.js) ───
+  if (url.pathname.startsWith('/hyperdeck')) {
+    const isLocalIp = ip => /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)\d{1,3}\.\d{1,3}$/.test(ip);
+    const json = (code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
+    try {
+      if (url.pathname === '/hyperdeck' || url.pathname === '/hyperdeck/list') return json(200, hyperdeckBridge.list());
+      const ip = url.searchParams.get('ip') || '';
+      if (!isLocalIp(ip)) return json(400, { ok: false, error: 'missing or invalid local ip' });
+      if (url.pathname === '/hyperdeck/state')  return json(200, hyperdeckBridge.state(ip));
+      if (url.pathname === '/hyperdeck/record') { await hyperdeckBridge.record(ip); return json(200, { ok: true }); }
+      if (url.pathname === '/hyperdeck/stop')   { await hyperdeckBridge.stop(ip);   return json(200, { ok: true }); }
+      if (url.pathname === '/hyperdeck/play')   { await hyperdeckBridge.play(ip);   return json(200, { ok: true }); }
+      return json(404, { ok: false, error: 'unknown hyperdeck endpoint' });
+    } catch (e) { return json(502, { ok: false, error: String(e && e.message || e) }); }
+  }
+
+  // ── Web Presenter control (persistent connection, see webpresenter-bridge.js) ──
+  if (url.pathname.startsWith('/webpresenter')) {
+    const isLocalIp = ip => /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)\d{1,3}\.\d{1,3}$/.test(ip);
+    const json = (code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
+    try {
+      if (url.pathname === '/webpresenter' || url.pathname === '/webpresenter/list') return json(200, webpresenterBridge.list());
+      const ip = url.searchParams.get('ip') || '';
+      if (!isLocalIp(ip)) return json(400, { ok: false, error: 'missing or invalid local ip' });
+      if (url.pathname === '/webpresenter/state') return json(200, webpresenterBridge.state(ip));
+      if (url.pathname === '/webpresenter/stream') {
+        const on = url.searchParams.get('on');
+        if (on === 'true')  { await webpresenterBridge.start(ip); return json(200, { ok: true }); }
+        if (on === 'false') { await webpresenterBridge.stop(ip);  return json(200, { ok: true }); }
+        return json(400, { ok: false, error: 'on must be true or false' });
+      }
+      return json(404, { ok: false, error: 'unknown webpresenter endpoint' });
+    } catch (e) { return json(502, { ok: false, error: String(e && e.message || e) }); }
+  }
+
   // ── Static files ──────────────────────────────────────────────────────────
   const filePath = path.join(ROOT, url.pathname === '/' ? 'index.html' : url.pathname);
   const ext = path.extname(filePath);
@@ -600,6 +667,10 @@ const server = http.createServer(async (req, res) => {
     res.end(data);
   });
 });
+
+atemBridge.init();
+hyperdeckBridge.init();
+webpresenterBridge.init();
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`\n  GearOps Dashboard`);

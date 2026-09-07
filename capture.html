@@ -275,6 +275,21 @@
     .live-badge .dot { width: 7px; height: 7px; background: #fff; border-radius: 50%; animation: pulse 1s infinite; }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 
+    /* ATEM camera switching bar */
+    .cam-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: rgba(30,41,59,0.8); border: 1px solid rgba(167,139,250,0.2); border-radius: 10px; padding: 8px 10px; }
+    .cam-bar.hidden { display: none; }
+    .cam-bar select { background: rgba(15,23,42,0.7); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; color: #e2e8f0; padding: 6px 10px; font-size: 0.8rem; outline: none; cursor: pointer; }
+    .cam-bar select option { background: #1e293b; }
+    .cam-btns { display: flex; gap: 6px; flex: 1; flex-wrap: wrap; }
+    .cam-btn { flex: 1; min-width: 84px; border: 1px solid rgba(255,255,255,0.12); background: rgba(15,23,42,0.6); color: #cbd5e1; border-radius: 8px; padding: 10px 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: background 0.12s, transform 0.08s, border-color 0.12s; }
+    .cam-btn:hover:not(.live) { background: rgba(96,165,250,0.15); border-color: rgba(96,165,250,0.4); }
+    .cam-btn:active { transform: scale(0.97); }
+    .cam-btn.preview { border-color: rgba(34,197,94,0.55); color: #4ade80; }
+    .cam-btn.live { background: #ef4444; border-color: #ef4444; color: #fff; box-shadow: 0 0 14px rgba(239,68,68,0.4); }
+    .cam-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .cam-auto { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #94a3b8; cursor: pointer; user-select: none; white-space: nowrap; }
+    .cam-err { font-size: 0.72rem; color: #f87171; }
+
     .status-bar { margin-top: 12px; font-size: 0.8rem; color: #8397a8; min-height: 20px; }
     .status-bar.err { color: #f87171; }
     .status-bar.ok  { color: #4ade80; }
@@ -354,6 +369,15 @@
           <i class="fa-solid fa-expand"></i> Fullscreen
         </button>
       </div>
+      <div class="cam-bar hidden" id="cam-bar">
+        <select id="cam-atem-select" title="Which ATEM to control"></select>
+        <div class="cam-btns" id="cam-btns"></div>
+        <label class="cam-auto" title="Use the switcher's Auto transition instead of a hard cut">
+          <input type="checkbox" id="cam-auto-toggle" /> Auto
+        </label>
+        <span class="cam-err" id="cam-err"></span>
+      </div>
+
       <div id="pinned-cards-wrap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;overflow:visible;align-content:start;"></div>
     </div>
 
@@ -372,6 +396,7 @@
 
 </div>
 
+<script src="/lib/gear-control.js"></script>
 <script>
   const SERVER = window.location.origin; // works from any device on the network
   let streaming = false;
@@ -628,8 +653,104 @@
   function crCatLabel(cat) { return CAT_DEFAULTS[cat] ? CAT_DEFAULTS[cat].label : cat.charAt(0).toUpperCase()+cat.slice(1); }
   function hex2rgb(hex) { return `${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`; }
 
+  // ── Bridge-backed devices (HyperDeck / Web Presenter via the node bridge) ──
+  // These replace the old Companion button/variable wiring for those devices.
+  const bridgeState = {}; // d.id -> last state object from the bridge
+
+  function crBridgeKind(d) {
+    if (!d.ip) return null;
+    if (d.category === 'hyperdecks') return 'hyperdeck';
+    if (/web\s*presenter/i.test(d.name || '')) return 'webpresenter';
+    return null;
+  }
+
+  function bridgeCardHtml(d, kind) {
+    const btns = kind === 'hyperdeck' ? `
+      <button class="btn-companion-press" onclick="hdCmd('${d.id}','record',this)"><i class="fa-solid fa-circle"></i> Rec</button>
+      <button class="btn-tab"             onclick="hdCmd('${d.id}','stop',this)"  style="flex:1;min-height:36px;"><i class="fa-solid fa-stop"></i> Stop</button>
+      <button class="btn-frame"           onclick="hdCmd('${d.id}','play',this)"  style="flex:1;min-height:36px;"><i class="fa-solid fa-play"></i> Play</button>`
+      : `
+      <button class="btn-companion-press" onclick="wpCmd('${d.id}',true,this)"><i class="fa-solid fa-tower-broadcast"></i> On Air</button>
+      <button class="btn-tab"             onclick="wpCmd('${d.id}',false,this)" style="flex:1;min-height:36px;"><i class="fa-solid fa-stop"></i> Off Air</button>`;
+    return `
+      <span class="companion-badge idle" id="cr-bridge-badge-${d.id}">—</span>
+      <div class="companion-text" id="cr-bridge-detail-${d.id}" style="display:none;"></div>
+      <div class="card-actions" style="flex-wrap:wrap;">${btns}</div>`;
+  }
+
+  function applyBridgeState(id, st) {
+    bridgeState[id] = st;
+    const badge = document.getElementById('cr-bridge-badge-' + id);
+    const detail = document.getElementById('cr-bridge-detail-' + id);
+    if (!badge) return;
+    if (!st || st.connected === false) {
+      badge.className = 'companion-badge idle';
+      badge.textContent = st && st.lastError ? 'Offline' : 'Bridge…';
+      if (detail) detail.style.display = 'none';
+      return;
+    }
+    const live = st.recording || st.streaming;
+    const connecting = st.status === 'Connecting';
+    badge.className = 'companion-badge ' + (live ? 'streaming' : connecting ? 'connecting' : 'idle');
+    badge.textContent = st.status || (live ? 'Live' : 'Idle');
+    if (detail) {
+      let parts = [];
+      if ('bitrateMbps' in st) {
+        if (st.streaming) parts.push(`${st.bitrateMbps} Mb/s`, st.duration, st.platform);
+        else if (st.platform) parts.push(st.platform);
+      } else {
+        if (st.timecode) parts.push('TC ' + st.timecode);
+        if (st.recordingTimeLeft && st.recordingTimeLeft !== '0:00:00') parts.push(st.recordingTimeLeft + ' left');
+        if (st.videoFormat) parts.push(st.videoFormat);
+      }
+      parts = parts.filter(Boolean);
+      detail.innerHTML = `<span class="companion-text-val">${esc(parts.join('  •  '))}</span>`;
+      detail.style.display = parts.length ? '' : 'none';
+    }
+  }
+
+  async function refreshBridgeState(d) {
+    const kind = crBridgeKind(d);
+    if (!kind) return;
+    try {
+      const st = kind === 'hyperdeck'
+        ? await gear.hyperdeckState(d.ip)
+        : await gear.webPresenterState(d.ip);
+      applyBridgeState(d.id, st);
+    } catch (e) {
+      applyBridgeState(d.id, { connected: false, lastError: e.message });
+    }
+  }
+
+  async function hdCmd(id, cmd, btn) {
+    const d = allEquipment.find(e => e.id === id); if (!d) return;
+    if (btn) { btn.classList.add('pressed'); btn.disabled = true; }
+    try {
+      if (cmd === 'record') await gear.hyperdeckRecord(d.ip);
+      else if (cmd === 'stop') await gear.hyperdeckStop(d.ip);
+      else if (cmd === 'play') await gear.hyperdeckPlay(d.ip);
+    } catch (e) { alert(d.name + ': ' + e.message); }
+    finally { setTimeout(() => { if (btn) { btn.classList.remove('pressed'); btn.disabled = false; } }, 400); }
+    refreshBridgeState(d);
+  }
+
+  async function wpCmd(id, on, btn) {
+    const d = allEquipment.find(e => e.id === id); if (!d) return;
+    if (on && !confirm('Go ON AIR — start streaming "' + d.name + '"?')) return;
+    if (btn) { btn.classList.add('pressed'); btn.disabled = true; }
+    try { await gear.webPresenterStream(d.ip, on); }
+    catch (e) { alert(d.name + ': ' + e.message); }
+    finally { setTimeout(() => { if (btn) { btn.classList.remove('pressed'); btn.disabled = false; } }, 400); }
+    refreshBridgeState(d);
+  }
+
+  function pollBridgeCards() {
+    allEquipment.filter(d => d.showInControlRoom && crBridgeKind(d)).forEach(refreshBridgeState);
+  }
+
   function buildDeviceCard(d) {
     const hasIp = !!d.ip;
+    const bridgeKind = crBridgeKind(d);
     const url = hasIp ? 'http://' + d.ip : '';
     const color = crCatColor(d.category);
     const rgb = hex2rgb(color);
@@ -659,6 +780,7 @@
           ${d.pass ? `<span><i class="fa-solid fa-key" style="width:12px;"></i>${esc(d.pass)}</span>` : ''}
         </div>` : ''}
         ${d.notes ? `<div class="card-notes">${esc(d.notes)}</div>` : ''}
+        ${bridgeKind ? bridgeCardHtml(d, bridgeKind) : `
         ${(d.companionButtons||[]).length ? `
         <div class="card-actions" style="flex-wrap:wrap;">
           ${(d.companionButtons||[]).map(b => `
@@ -666,7 +788,7 @@
             <i class="fa-solid fa-circle-dot"></i> ${esc(b.label)}
           </button>`).join('')}
         </div>` : ''}
-        ${companionHtml}
+        ${companionHtml}`}
         ${(d.appKey || d.appPath || d.browserEnabled) ? `
         <div class="card-actions">
           ${(d.appKey || d.appPath) ? `
@@ -856,6 +978,8 @@
     .then(devices => {
       allEquipment = devices.sort((a, b) => a.name.localeCompare(b.name));
       renderPinnedCards();
+      pollBridgeCards();
+      setInterval(pollBridgeCards, 2000);
       const hasPinnedCompanion = allEquipment.some(d => d.showInControlRoom && (d.companionVars || []).length);
       if (hasPinnedCompanion) {
         pollWpCompanion();
@@ -866,6 +990,112 @@
       setInterval(pingAllEq, +(localStorage.getItem('gearops_refresh_interval') || 10000));
     })
     .catch(e => console.error('Failed to load devices:', e));
+
+  // ── ATEM camera switching bar ────────────────────────────────────────────
+  const CAM_INPUTS = [1, 2, 3, 4];
+  const camBar    = document.getElementById('cam-bar');
+  const camSelect = document.getElementById('cam-atem-select');
+  const camBtns   = document.getElementById('cam-btns');
+  const camErr    = document.getElementById('cam-err');
+  const camAuto   = document.getElementById('cam-auto-toggle');
+  let camPollTimer = null;
+
+  camAuto.checked = localStorage.getItem('gearops_cam_auto') === '1';
+  camAuto.onchange = () => localStorage.setItem('gearops_cam_auto', camAuto.checked ? '1' : '0');
+
+  function camLabelFor(atem, n) {
+    const inp = (atem.inputs || []).find(i => i.id === n);
+    return inp ? inp.label : 'CAM ' + n;
+  }
+
+  function paintCamButtons(atem) {
+    const me = (atem.mixEffects || [])[0] || {};
+    [...camBtns.children].forEach(btn => {
+      const n = +btn.dataset.input;
+      btn.classList.toggle('live', me.program === n);
+      btn.classList.toggle('preview', me.preview === n && me.program !== n);
+    });
+  }
+
+  function renderCamButtons(atem) {
+    camBtns.innerHTML = '';
+    CAM_INPUTS.forEach(n => {
+      const btn = document.createElement('button');
+      btn.className = 'cam-btn';
+      btn.dataset.input = n;
+      btn.textContent = camLabelFor(atem, n);
+      btn.onclick = () => switchCam(n, btn);
+      camBtns.appendChild(btn);
+    });
+    paintCamButtons(atem);
+  }
+
+  async function switchCam(n, btn) {
+    const ip = camSelect.value;
+    if (!ip) return;
+    camErr.textContent = '';
+    [...camBtns.children].forEach(b => b.disabled = true);
+    try {
+      if (camAuto.checked) {
+        await gear.atemPreview(ip, n);
+        await gear.atemAuto(ip);
+      } else {
+        await gear.atemProgram(ip, n);
+      }
+      await refreshCam();
+    } catch (e) {
+      camErr.textContent = e.message;
+    } finally {
+      [...camBtns.children].forEach(b => b.disabled = false);
+    }
+  }
+
+  async function refreshCam() {
+    const ip = camSelect.value;
+    if (!ip) return;
+    try {
+      const atem = await gear.atemState(ip);
+      paintCamButtons(atem);
+      camErr.textContent = atem.connected ? '' : 'ATEM offline';
+    } catch (e) {
+      camErr.textContent = e.message;
+    }
+  }
+
+  async function selectCamAtem() {
+    const ip = camSelect.value;
+    localStorage.setItem('gearops_cam_atem', ip);
+    camErr.textContent = '';
+    try {
+      const atem = await gear.atemState(ip);
+      renderCamButtons(atem);
+    } catch (e) {
+      camErr.textContent = e.message;
+    }
+  }
+
+  async function initCamBar() {
+    let list = [];
+    try { list = await gear.atemList(); } catch { list = []; }
+    const usable = list.filter(a => a.connected);
+    if (!usable.length) { camBar.classList.add('hidden'); return; }
+
+    const saved = localStorage.getItem('gearops_cam_atem');
+    camSelect.innerHTML = usable
+      .map(a => `<option value="${a.ip}">${esc(a.name)}</option>`)
+      .join('');
+    if (saved && usable.some(a => a.ip === saved)) camSelect.value = saved;
+    camSelect.onchange = selectCamAtem;
+
+    camBar.classList.remove('hidden');
+    await selectCamAtem();
+
+    if (camPollTimer) clearInterval(camPollTimer);
+    camPollTimer = setInterval(refreshCam, 2000);
+  }
+
+  initCamBar();
+  setInterval(() => { if (camBar.classList.contains('hidden')) initCamBar(); }, 15000);
 </script>
 </body>
 </html>
