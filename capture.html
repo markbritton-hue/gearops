@@ -704,6 +704,18 @@
     }
   });
 
+  // ── Take the browser fullscreen on entering the Control Room ─────────────
+  // Browsers only allow requestFullscreen() from a user gesture, so fire it
+  // on the first click / key / touch after the page loads.
+  function enterBrowserFullscreen() {
+    if (document.fullscreenElement) return;
+    const el = document.documentElement;
+    const fn = el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen;
+    if (fn) { try { Promise.resolve(fn.call(el)).catch(() => {}); } catch (e) {} }
+  }
+  ['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+    window.addEventListener(ev, enterBrowserFullscreen, { once: true, passive: true }));
+
   // Auto-scan on load, then auto-start if a device was previously selected
   scanDevices().then(() => {
     const sel = document.getElementById('device-select');
