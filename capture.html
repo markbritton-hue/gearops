@@ -868,7 +868,9 @@
 
   function renderPinnedCards() {
     const wrap = document.getElementById('pinned-cards-wrap');
-    const pinned = allEquipment.filter(d => d.showInControlRoom);
+    // HyperDecks and the Web Presenter are controlled from their own bridge
+    // surfaces, not as pinned cards at the bottom of the Control Room.
+    const pinned = allEquipment.filter(d => d.showInControlRoom && !crBridgeKind(d));
     wrap.innerHTML = pinned.map(d => buildDeviceCard(d)).join('');
   }
 
